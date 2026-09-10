@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>文章集</title>
+<style>
+  :root{
+    --bg:#f6f5f2; --panel:#ffffff; --text:#232019; --muted:#918a7d;
+    --border:#e9e5dd; --hover:#f2efe9; --accent:#9a5b34;
+    --shadow:0 12px 40px rgba(0,0,0,.10);
+    --serif:"Songti SC","Noto Serif SC","Source Han Serif SC",Georgia,"Times New Roman",serif;
+  }
+  [data-theme="dark"]{
+    --bg:#161513; --panel:#1d1c1a; --text:#e8e4dc; --muted:#8f887c;
+    --border:#2c2a26; --hover:#26241f; --accent:#d79a6a;
+    --shadow:0 12px 40px rgba(0,0,0,.45);
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    transition:background .2s,color .2s;
+  }
+  button{font:inherit;}
+
+  /* ================= 布局 ================= */
+  .app{display:grid;grid-template-columns:300px 1fr;height:100vh;height:100dvh;}
+  .app[hidden]{display:none;}
+
+  /* ================= 侧边栏 ================= */
+  .sidebar{
+    background:var(--panel);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;min-height:0;
+  }
+  .sidebar-top{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 10px;}
+  .brand-title{font-weight:700;font-size:16px;letter-spacing:.02em;}
+  .brand-count{font-size:12px;color:var(--muted);margin-left:6px;}
+  .icon-btn{
+    width:30px;height:30px;border-radius:8px;border:1px solid var(--border);
+    background:transparent;color:var(--muted);cursor:pointer;line-height:1;
+  }
+  .icon-btn:hover{background:var(--hover);color:var(--text);}
+
+  .search-wrap{padding:0 18px 12px;}
+  .search-wrap input{
+    width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--border);
+    background:var(--bg);color:var(--text);font-size:13px;outline:none;
+  }
+  .search-wrap input:focus{border-color:var(--accent);}
+
+  .list{flex:1;overflow-y:auto;padding:4px 10px 10px;}
+  .list::-webkit-scrollbar{width:8px;}
+  .list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  .item{
+    display:flex;align-items:center;gap:8px;
+    width:100%;text-align:left;border:0;background:transparent;
+    padding:7px 10px;border-radius:8px;cursor:pointer;color:var(--text);
+    font-size:14px;line-height:1.5;margin-bottom:2px;
+    transition:background .12s;
+  }
+  .item:hover{background:var(--hover);}
+  .item.active{background:var(--hover);color:var(--accent);font-weight:600;}
+
+  /* 序号徽标 */
+  .item .idx{
+    flex:0 0 auto;min-width:20px;height:20px;padding:0 5px;border-radius:6px;
+    background:var(--hover);color:var(--muted);font-size:11px;
+    display:inline-flex;align-items:center;justify-content:center;
+  }
+  .item.active .idx{background:var(--accent);color:#fff;}
+  .item .label{
+    flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+
+  /* --- 新增：排序控件 --- */
+  .sort-wrap{
+    display:flex;align-items:center;gap:8px;
+    padding:0 18px 12px;font-size:12.5px;color:var(--muted);
+  }
+  .sort-wrap select{
+    flex:1;padding:6px 8px;border-radius:8px;
+    border:1px solid var(--border);background:var(--bg);color:var(--text);
+    font-size:12.5px;outline:none;cursor:pointer;
+  }
+  .sort-wrap select:focus{border-color:var(--accent);}
+
+  .list-empty{padding:16px;font-size:13px;color:var(--muted);}
+
+  .sidebar-bottom{padding:12px 18px 18px;border-top:1px solid var(--border);}
+
+  .btn{
+    padding:9px 16px;border-radius:9px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text);cursor:pointer;font-size:14px;
+    transition:background .15s,filter .15s;
+  }
+  .btn:hover{background:var(--hover);}
+  .btn.primary{background:var(--accent);color:#fff;border-color:transparent;}
+  .btn.primary:hover{filter:brightness(1.08);}
+  .btn.ghost{width:100%;font-size:13px;color:var(--muted);}
+  .btn:disabled{opacity:.35;cursor:not-allowed;}
+
+  /* ================= 正文区 ================= */
+  .main{position:relative;overflow-y:auto;min-width:0;scroll-behavior:smooth;}
+  .reader{max-width:720px;margin:0 auto;padding:72px 40px 140px;}
+  .reader h1{font-size:30px;line-height:1.42;margin:0 0 12px;font-weight:700;letter-spacing:.01em;}
+  .meta{
+    font-size:13px;color:var(--muted);
+    padding-bottom:22px;margin-bottom:32px;border-bottom:1px solid var(--border);
+  }
+  .reader p{
+    font-family:var(--serif);
+    font-size:18px;line-height:2.05;margin:0 0 1.35em;
+    letter-spacing:.015em;text-align:justify;
+  }
+  .reader p.lead{
+    color:var(--muted);font-size:16.5px;line-height:1.95;
+    border-left:3px solid var(--border);padding-left:18px;
+  }
+  .pager{
+    display:flex;gap:12px;justify-content:space-between;
+    margin-top:56px;padding-top:24px;border-top:1px solid var(--border);
+  }
+
+  .menu-btn{display:none;}
+
+  /* ================= 欢迎/导入界面 ================= */
+  .welcome{
+    position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    padding:24px;background:var(--bg);
+  }
+  .welcome[hidden]{display:none;}
+  .welcome-inner{
+    max-width:520px;width:100%;text-align:center;
+    padding:48px 32px;border-radius:20px;border:1.5px dashed var(--border);
+    background:var(--panel);transition:border-color .2s,background .2s;
+  }
+  body.dragging .welcome-inner{border-color:var(--accent);background:var(--hover);}
+  .welcome h1{font-size:28px;margin:0 0 14px;letter-spacing:.02em;}
+  .welcome p{color:var(--muted);line-height:1.85;font-size:15px;margin:0 0 6px;}
+  .buttons{display:flex;gap:12px;justify-content:center;margin:28px 0 18px;flex-wrap:wrap;}
+  .hint{font-size:12.5px;color:var(--muted);opacity:.85;}
+
+  /* ================= 响应式 ================= */
+  @media (max-width:820px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{
+      position:fixed;top:0;left:0;bottom:0;width:280px;z-index:30;
+      transform:translateX(-100%);transition:transform .25s ease;
+      box-shadow:var(--shadow);
+    }
+    .sidebar.open{transform:translateX(0);}
+    .menu-btn{
+      display:flex;position:fixed;top:14px;left:14px;z-index:20;
+      width:38px;height:38px;align-items:center;justify-content:center;
+      border-radius:10px;border:1px solid var(--border);
+      background:var(--panel);color:var(--text);cursor:pointer;font-size:16px;
+      box-shadow:0 2px 10px rgba(0,0,0,.08);
+    }
+    .reader{padding:78px 22px 120px;}
+    .reader h1{font-size:24px;}
+    .reader p{font-size:17px;line-height:1.95;}
+  }
+</style>
+</head>
+<body>
+
+<!-- 导入界面 -->
+<div class="welcome" id="welcome">
+  <div class="welcome-inner">
+    <h1>文章集</h1>
+    <p>把存放文章的文件夹（或全部 .txt 文件）拖到这里，<br>也可以点击下面的按钮选择。</p>
+    <div class="buttons">
+      <button class="btn primary" id="pickFolder">选择文件夹</button>
+      <button class="btn" id="pickFiles">选择文件</button>
+    </div>
+    <p class="hint">文件只在你的浏览器里读取，不会上传到任何地方。</p>
+  </div>
+</div>
+
+<!-- 阅读界面 -->
+<div class="app" id="app" hidden>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div>
+        <span class="brand-title">文章集</span>
+        <span class="brand-count" id="count"></span>
+      </div>
+      <button class="icon-btn" id="themeBtn" title="切换深浅色">◐</button>
+    </div>
+    <div class="search-wrap">
+      <input id="search" type="search" placeholder="搜索标题…" autocomplete="off" />
+    </div>
+    <div class="sort-wrap">
+      <label for="sortSelect">排序</label>
+      <select id="sortSelect">
+        <option value="order">文件名序号</option>
+        <option value="title">标题</option>
+        <option value="import">导入顺序</option>
+      </select>
+    </div>
+    <nav class="list" id="list"></nav>
+    <div class="sidebar-bottom">
+      <button class="btn ghost" id="reloadBtn">重新选择文件</button>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <button class="menu-btn" id="menuBtn" title="目录">☰</button>
+    <article class="reader" id="reader"></article>
+  </main>
+</div>
+
+<!-- 隐藏的文件输入 -->
+<input type="file" id="folderInput" webkitdirectory directory multiple hidden />
+<input type="file" id="filesInput" accept=".txt,text/plain" multiple hidden />
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------------- 元素引用 ---------------- */
+  const $ = (s) => document.querySelector(s);
+  const els = {
+    app: $('#app'),
+    welcome: $('#welcome'),
+    sidebar: $('#sidebar'),
+    list: $('#list'),
+    count: $('#count'),
+    search: $('#search'),
+    reader: $('#reader'),
+    main: $('#main'),
+    folderInput: $('#folderInput'),
+    filesInput: $('#filesInput'),
+    themeBtn: $('#themeBtn'),
+    menuBtn: $('#menuBtn'),
+    reloadBtn: $('#reloadBtn'),
+    sortSelect: $('#sortSelect')
+  };
+
+  const state = {
+    articles: [],
+    currentId: null,
+    query: '',
+    sortMode: 'order'                     // 默认按文件名序号
+  };
+
+  /* ---------------- 工具函数 ---------------- */
+  const esc = (s) =>
+    String(s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+
+  /** 读取文件，自动兼容 UTF-8 / GBK 编码 */
+  async function readTextFile(file) {
+    const buf = await file.arrayBuffer();
+    let text = new TextDecoder('utf-8').decode(buf);
+    if (text.includes('\uFFFD')) {
+      try {
+        const alt = new TextDecoder('gbk').decode(buf);
+        if (!alt.includes('\uFFFD')) text = alt;
+      } catch (e) { /* 浏览器不支持 gbk 时忽略 */ }
+    }
+    return text;
+  }
+
+  /**
+   * 解析单篇文章
+   * 文件名：标题.txt
+   * 内容：第一行 = 标题，其余每个非空行 = 一个段落（第一个段落视作引言）
+   */
+  function parseArticle(filename, raw) {
+    const base = filename.replace(/\.txt$/i, '').trim() || filename;
+    const lines = raw
+      .replace(/^\uFEFF/, '')
+      .replace(/\r\n?/g, '\n')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    let title = base;
+    let paragraphs = lines;
+
+    // 首行若长度合理，视为标题（通常与文件名一致）
+    if (lines.length && lines[0].length <= 80) {
+      title = lines[0];
+      paragraphs = lines.slice(1);
+    }
+    if (!paragraphs.length) paragraphs = ['（本文暂无正文）'];
+
+    // ★ 提取文件名开头的数字作为排序键
+    const m = base.match(/^(\d+)/);
+    const order = m ? parseInt(m[1], 10) : null;
+
+    return {
+      id: filename,
+      name: base,
+      title,
+      paragraphs,
+      chars: raw.replace(/\s/g, '').length,
+      order: order,        // 数字序号，无则 null
+      importIndex: 0       // 导入顺序，加载时填入
+    };
+  }
+
+  const SORT_MODES = { order: 1, title: 1, import: 1 };
+
+  function byTitle(a, b) {
+    return a.title.localeCompare(b.title, 'zh-Hans-CN', {
+      numeric: true, sensitivity: 'base'
+    });
+  }
+
+  function sortArticles(list, mode) {
+    const arr = list.slice();
+    if (mode === 'title') {
+      arr.sort(byTitle);
+    } else if (mode === 'import') {
+      arr.sort((a, b) => a.importIndex - b.importIndex);
+    } else {
+      // 有数字的排前面，按数字升序；无数字的按标题排后面
+      arr.sort((a, b) => {
+        const ao = a.order, bo = b.order;
+        if (ao !== null && bo !== null) {
+          if (ao !== bo) return ao - bo;
+          return byTitle(a, b);          // 序号相同再按标题
+        }
+        if (ao !== null) return -1;
+        if (bo !== null) return 1;
+        return byTitle(a, b);
+      });
+    }
+    return arr;
+  }
+
+  function applySort() {
+    state.articles = sortArticles(state.articles, state.sortMode);
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function renderList() {
+    const q = state.query.trim().toLowerCase();
+    const items = state.articles.filter(
+      (a) => !q || a.title.toLowerCase().includes(q) || a.name.toLowerCase().includes(q)
+    );
+
+    els.count.textContent = state.articles.length ? state.articles.length + ' 篇' : '';
+
+    if (!state.articles.length) { els.list.innerHTML = ''; return; }
+
+    els.list.innerHTML = items.length
+      ? items.map((a) => {
+          const badge = a.order !== null
+            ? '<span class="idx">' + a.order + '</span>'
+            : '<span class="idx">·</span>';
+          return '<button class="item' + (a.id === state.currentId ? ' active' : '') +
+            '" data-id="' + esc(a.id) + '" title="' + esc(a.title) + '">' +
+            badge + '<span class="label">' + esc(a.title) + '</span></button>';
+        }).join('')
+      : '<div class="list-empty">没有匹配的文章</div>';
+  }
+
+  function renderArticle() {
+    const idx = state.articles.findIndex((a) => a.id === state.currentId);
+    if (idx < 0) { els.reader.innerHTML = ''; return; }
+
+    const a = state.articles[idx];
+    const body = a.paragraphs
+      .map((p, i) => '<p' + (i === 0 ? ' class="lead"' : '') + '>' + esc(p) + '</p>')
+      .join('');
+
+    const mins = Math.max(1, Math.round(a.chars / 400));
+
+    els.reader.innerHTML =
+      '<h1>' + esc(a.title) + '</h1>' +
+      '<div class="meta">第 ' + (idx + 1) + ' / ' + state.articles.length +
+      ' 篇 · 约 ' + a.chars + ' 字 · ' + mins + ' 分钟</div>' +
+      body +
+      '<div class="pager">' +
+        '<button class="btn" id="prevBtn"' + (idx === 0 ? ' disabled' : '') + '>← 上一篇</button>' +
+        '<button class="btn" id="nextBtn"' + (idx === state.articles.length - 1 ? ' disabled' : '') + '>下一篇 →</button>' +
+      '</div>';
+
+    const prev = $('#prevBtn'), next = $('#nextBtn');
+    if (prev) prev.addEventListener('click', () => goto(idx - 1));
+    if (next) next.addEventListener('click', () => goto(idx + 1));
+  }
+
+  function goto(i) {
+    if (i < 0 || i >= state.articles.length) return;
+    state.currentId = state.articles[i].id;
+    renderList();
+    renderArticle();
+    els.main.scrollTop = 0;
+  }
+
+  function selectById(id) {
+    if (!state.articles.some((a) => a.id === id)) return;
+    state.currentId = id;
+    renderList();
+    renderArticle();
+    els.main.scrollTop = 0;
+    if (window.innerWidth <= 820) els.sidebar.classList.remove('open');
+  }
+
+  /* ---------------- 加载文件 ---------------- */
+  async function loadFiles(fileList) {
+    const files = Array.from(fileList).filter(
+      (f) => /\.txt$/i.test(f.name) && !f.name.startsWith('.')
+    );
+
+    if (!files.length) {
+      alert('没有找到 .txt 文件，请重新选择。');
+      return;
+    }
+
+    // 按文件名排序（支持 01、02 这类数字顺序）
+    const arts = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      try {
+        const raw = await readTextFile(f);
+        const a = parseArticle(f.name, raw);
+        a.importIndex = i;                 // ★ 记录原始导入顺序
+        arts.push(a);
+      } catch (err) {
+        console.warn('读取失败：' + f.name, err);
+      }
+    }
+
+    // 按文件名去重，保留先出现的
+    const seen = new Set();
+    const uniq = arts.filter((a) => {
+      if (seen.has(a.id)) return false;
+      seen.add(a.id);
+      return true;
+    });
+
+    state.articles = uniq;
+    applySort();                           // ★ 按当前模式排序
+    state.query = '';
+    els.search.value = '';
+    state.currentId = uniq.length ? state.articles[0].id : null;
+
+    els.welcome.hidden = true;
+    els.app.hidden = false;
+
+    renderList();
+    renderArticle();
+    els.main.scrollTop = 0;
+  }
+
+  /* ---------------- 自动从 docs/ 加载 ---------------- */
+  const DOCS_DIR = 'docs/';
+  const MANIFEST_NAMES = ['list.json', 'list.txt'];
+
+  /** 尝试读取清单文件，返回文件名数组或 null */
+  async function fetchManifest() {
+    for (const url of MANIFEST_NAMES) {
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) continue;
+        const text = await res.text();
+
+        // 先按 JSON 解析
+        try {
+          const data = JSON.parse(text);
+          if (Array.isArray(data)) return data;
+          if (data && Array.isArray(data.files)) return data.files;
+        } catch (e) { /* 不是 JSON，按文本处理 */ }
+
+        // 按“每行一个文件名”解析
+        return text
+          .split(/\r?\n/)
+          .map((s) => s.trim())
+          .filter((s) => s && !s.startsWith('#'));
+      } catch (e) {
+        // 网络/跨域失败，尝试下一个候选
+      }
+    }
+    return null;
+  }
+
+  /** 过滤掉不安全的文件名（拒绝子目录、上级跳转、非 .txt） */
+  function safeFileName(name) {
+    const s = String(name).trim();
+    if (!s) return null;
+    if (s.includes('/') || s.includes('\\') || s.includes('..')) return null;
+    if (!/\.txt$/i.test(s)) return null;
+    return s;
+  }
+
+  /** 尝试从 docs/ 自动加载，成功返回 true，失败返回 false */
+  async function loadFromDocs() {
+    const names = await fetchManifest();
+    if (!names || !names.length) return false;
+
+    const arts = [];
+    let idx = 0;
+    for (const rawName of names) {
+      const name = safeFileName(rawName);
+      if (!name) continue;
+      try {
+        const res = await fetch(DOCS_DIR + encodeURIComponent(name), { cache: 'no-store' });
+        if (!res.ok) continue;
+        const text = await res.text();
+        const a = parseArticle(name, text);
+        a.importIndex = idx++;
+        arts.push(a);
+      } catch (e) {
+        console.warn('加载失败：' + name, e);
+      }
+    }
+    if (!arts.length) return false;
+
+    const seen = new Set();
+    const uniq = arts.filter((a) => {
+      if (seen.has(a.id)) return false;
+      seen.add(a.id);
+      return true;
+    });
+
+    state.articles = uniq;
+    applySort();
+    state.query = '';
+    els.search.value = '';
+    state.currentId = state.articles[0].id;
+
+    els.welcome.hidden = true;
+    els.app.hidden = false;
+    renderList();
+    renderArticle();
+    els.main.scrollTop = 0;
+    return true;
+  }
+
+  /* ---------------- 拖拽（支持整个文件夹） ---------------- */
+  function walkEntry(entry) {
+    return new Promise((resolve) => {
+      if (entry.isFile) {
+        entry.file((f) => resolve([f]), () => resolve([]));
+      } else if (entry.isDirectory) {
+        const reader = entry.createReader();
+        const all = [];
+        const readBatch = () => {
+          reader.readEntries(
+            async (ents) => {
+              if (!ents.length) {
+                const out = [];
+                for (const e of all) out.push(...(await walkEntry(e)));
+                resolve(out);
+                return;
+              }
+              all.push(...ents);
+              readBatch();
+            },
+            () => resolve([])
+          );
+        };
+        readBatch();
+      } else {
+        resolve([]);
+      }
+    });
+  }
+
+  async function filesFromDataTransfer(dt) {
+    const items = dt.items ? Array.from(dt.items) : [];
+    const entries = items
+      .filter((i) => i.kind === 'file' && typeof i.webkitGetAsEntry === 'function')
+      .map((i) => i.webkitGetAsEntry());
+
+    if (!entries.length || entries.some((e) => !e)) {
+      return Array.from(dt.files || []);
+    }
+    const arrs = await Promise.all(entries.map((e) => walkEntry(e)));
+    return arrs.flat();
+  }
+
+  let dragDepth = 0;
+  document.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    dragDepth++;
+    document.body.classList.add('dragging');
+  });
+  document.addEventListener('dragover', (e) => e.preventDefault());
+  document.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (!dragDepth) document.body.classList.remove('dragging');
+  });
+  document.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    dragDepth = 0;
+    document.body.classList.remove('dragging');
+    if (!e.dataTransfer) return;
+    const files = await filesFromDataTransfer(e.dataTransfer);
+    if (files.length) loadFiles(files);
+  });
+
+  /* ---------------- 事件绑定 ---------------- */
+  $('#pickFolder').addEventListener('click', () => els.folderInput.click());
+  $('#pickFiles').addEventListener('click', () => els.filesInput.click());
+  els.reloadBtn.addEventListener('click', () => els.folderInput.click());
+
+  els.folderInput.addEventListener('change', (e) => {
+    if (e.target.files.length) loadFiles(e.target.files);
+    e.target.value = '';
+  });
+  els.filesInput.addEventListener('change', (e) => {
+    if (e.target.files.length) loadFiles(e.target.files);
+    e.target.value = '';
+  });
+
+  els.list.addEventListener('click', (e) => {
+    const btn = e.target.closest('.item');
+    if (btn) selectById(btn.dataset.id);
+  });
+
+  els.search.addEventListener('input', (e) => {
+    state.query = e.target.value;
+    renderList();
+  });
+
+  els.sortSelect.addEventListener('change', (e) => {
+    state.sortMode = e.target.value;
+    localStorage.setItem('sortMode', state.sortMode);
+    applySort();
+    renderList();
+    renderArticle();      // 重算“第 x / y 篇”
+  });
+
+  // 初始化时恢复上次选择
+  const savedSort = localStorage.getItem('sortMode');
+  if (savedSort && SORT_MODES[savedSort]) {
+    state.sortMode = savedSort;
+  }
+  els.sortSelect.value = state.sortMode;
+
+  // 主题切换
+  const saved = localStorage.getItem('theme');
+  document.documentElement.setAttribute(
+    'data-theme',
+    saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  );
+  els.themeBtn.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  });
+
+  // 移动端目录抽屉
+  els.menuBtn.addEventListener('click', () => els.sidebar.classList.toggle('open'));
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth > 820) return;
+    if (e.target.closest('#menuBtn')) return;
+    if (!els.sidebar.contains(e.target)) els.sidebar.classList.remove('open');
+  });
+
+  // 键盘左右键翻篇
+  document.addEventListener('keydown', (e) => {
+    if (els.app.hidden) return;
+    if (e.target.matches('input, textarea')) return;
+    const idx = state.articles.findIndex((a) => a.id === state.currentId);
+    if (idx < 0) return;
+    if (e.key === 'ArrowLeft') goto(idx - 1);
+    else if (e.key === 'ArrowRight') goto(idx + 1);
+  });
+
+  /* ---------------- 启动：先尝试自动加载，否则保持手动选择界面 ---------------- */
+  loadFromDocs().then((ok) => {
+    if (!ok) {
+      // 自动加载失败，保持原来的导入界面
+      els.welcome.hidden = false;
+      els.app.hidden = true;
+    }
+  });
+})();
+</script>
+</body>
+</html>

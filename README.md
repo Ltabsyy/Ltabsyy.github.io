@@ -64,11 +64,15 @@ GUI/数学/物理库 **GGCC** [https://github.com/Ltabsyy/GGCC](https://github.c
 
 ### 引用
 
-MC终末之诗
+|     |     |     |     |
+| --- | --- | --- | --- |
+|[心经](心经.html)|[道德经](道德经.html)|[千字文](千字文.html)|[MC终末之诗](终末之诗.html)|
 
 ### DeepSeek辅助创作
 
-见知乎，暂未独立网页
+[跳转知乎专栏查看](https://www.zhihu.com/column/c_1949970593186293163)
+
+[使用HTML文章集工具查看](DS创作选集.html)
 
 |     |     |     |
 | --- | --- | --- |

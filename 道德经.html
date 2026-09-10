@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>道德经 · 帛书 / 传世 对照</title>
+<style>
+  :root{
+    --bg:#f6f2e9;
+    --paper:#fffdf8;
+    --ink:#2a2724;
+    --ink-soft:#8a8078;
+    --line:#e8dfce;
+    --bo:#9a3b2c;
+    --chuan:#2f5d6b;
+    --diff:#8a6a1f;
+    --zhi:#4a6b3f;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Songti SC","STSong","SimSun","Noto Serif CJK SC","Source Han Serif SC",serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{display:flex;height:100%;}
+
+  /* ---------- 侧栏目录 ---------- */
+  .sidebar{
+    flex:0 0 224px;width:224px;
+    padding:26px 10px 26px 22px;
+    border-right:1px solid var(--line);
+    overflow-y:auto;
+    background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,0));
+  }
+  .brand{font-size:1.12rem;letter-spacing:.32em;margin:0 0 6px 10px;font-weight:400;}
+  .brand-sub{font-size:.68rem;letter-spacing:.16em;color:var(--ink-soft);margin:0 0 20px 11px;}
+  .toc{display:flex;flex-direction:column;gap:1px;}
+  .toc button{
+    appearance:none;border:0;background:transparent;
+    font:inherit;font-size:.9rem;color:var(--ink-soft);
+    text-align:left;padding:7px 10px;border-radius:8px;
+    cursor:pointer;transition:background .15s,color .15s;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .toc button:hover{background:rgba(154,59,44,.07);color:var(--ink);}
+  .toc button.active{background:rgba(154,59,44,.13);color:var(--bo);}
+
+  /* ---------- 正文 ---------- */
+  .content{
+    flex:1;min-width:0;overflow-y:auto;
+    padding:56px 36px 150px;
+    display:flex;justify-content:center;
+  }
+  .reader{width:100%;max-width:66em;}
+
+  .chapter-title{
+    font-size:1.42rem;font-weight:400;letter-spacing:.3em;text-indent:.3em;
+    color:var(--bo);text-align:center;margin:0 0 2rem;
+  }
+  .chapter-title::after{
+    content:"";display:block;width:36px;height:1px;
+    background:var(--line);margin:1.05rem auto 0;
+  }
+
+  /* 帛书 / 传世 并排 */
+  .compare{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
+    gap:16px;
+    align-items:start;
+    margin-bottom:16px;
+  }
+
+  /* ---------- 卡片 ---------- */
+  .card{
+    position:relative;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px 20px 6px;
+    margin-bottom:16px;
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(90,70,40,.04), 0 10px 26px -22px rgba(90,70,40,.7);
+  }
+  .card::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+    background:var(--accent-color,var(--line));opacity:.75;
+  }
+  .card.bo{--accent-color:var(--bo);}
+  .card.chuan{--accent-color:var(--chuan);}
+  .card.diff{--accent-color:var(--diff);}
+  .card.zhi{--accent-color:var(--zhi);}
+  .compare .card{margin-bottom:0;height:100%;}
+
+  .card-head{
+    display:flex;align-items:center;gap:8px;
+    font-size:.76rem;letter-spacing:.22em;font-weight:600;
+    color:var(--accent-color);
+    margin:2px 0 12px;
+  }
+
+  .card-body p{
+    margin:0 0 1.05em;
+    font-size:1.03rem;line-height:2.08;
+    text-align:justify;letter-spacing:.01em;
+  }
+  .card-body p:last-child{margin-bottom:.9em;}
+
+  /* 版本差异：条目化 */
+  .diff-item{
+    display:flex;gap:10px;
+    padding:10px 0;
+    border-top:1px dashed var(--line);
+  }
+  .diff-item:first-child{border-top:0;padding-top:2px;}
+  .diff-item .no{
+    flex:0 0 auto;color:var(--diff);
+    font-size:.95rem;line-height:2;opacity:.9;
+  }
+  .diff-item p{
+    flex:1;margin:0;
+    font-size:.97rem;line-height:1.98;
+    text-align:justify;color:#3b352e;
+  }
+  .card.diff .card-body{padding-bottom:.6em;}
+
+  /* 上标序号 */
+  .mark{
+    color:var(--diff);font-weight:600;font-size:.85em;
+    padding:0 .16em;margin:0 .02em;border-radius:3px;
+    background:rgba(138,106,31,.1);
+    vertical-align:.09em;
+  }
+
+  /* ---------- 底部翻页 ---------- */
+  .nav{position:fixed;left:224px;right:0;bottom:20px;display:flex;justify-content:center;pointer-events:none;}
+  .nav-inner{
+    pointer-events:auto;display:flex;align-items:center;gap:4px;
+    padding:5px 6px;border:1px solid var(--line);border-radius:999px;
+    background:rgba(255,253,248,.93);backdrop-filter:blur(8px);
+    box-shadow:0 8px 26px rgba(60,40,20,.09);
+  }
+  .nav-inner button{
+    appearance:none;border:0;background:transparent;
+    font:inherit;font-size:.85rem;color:var(--ink);
+    padding:6px 14px;border-radius:999px;cursor:pointer;
+    transition:background .15s;
+  }
+  .nav-inner button:hover:not(:disabled){background:rgba(154,59,44,.1);}
+  .nav-inner button:disabled{color:#cbc4b9;cursor:default;}
+  .nav-inner .pos{
+    padding:0 8px;min-width:5.5em;text-align:center;
+    font-size:.82rem;color:var(--ink-soft);letter-spacing:.05em;
+  }
+
+  /* ---------- 读取失败 ---------- */
+  .fallback{max-width:36em;line-height:1.95;font-size:.95rem;}
+  .fallback h2{font-size:1.15rem;font-weight:400;color:var(--bo);letter-spacing:.08em;margin:0 0 1em;}
+  .fallback pre{
+    background:#fffdf8;border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;overflow-x:auto;font-size:.85rem;
+  }
+  .fallback code{background:#fffdf8;padding:1px 5px;border-radius:5px;border:1px solid var(--line);}
+  .fallback .err{color:var(--bo);font-size:.85rem;}
+  .fallback input[type=file]{font:inherit;font-size:.9rem;margin-top:.4em;}
+  .fallback .tip{color:var(--ink-soft);font-size:.82rem;}
+
+  @media (max-width:820px){
+    .app{flex-direction:column;}
+    .sidebar{
+      flex:0 0 auto;width:100%;padding:12px 0 6px;
+      border-right:0;border-bottom:1px solid var(--line);overflow:visible;
+    }
+    .brand{font-size:1rem;margin:0 0 10px 16px;}
+    .brand-sub{display:none;}
+
+    .toc{
+      flex-direction:row;gap:8px;
+      overflow-x:auto;overflow-y:hidden;
+      padding:2px 16px 10px;
+      scroll-padding-inline:16px;      /* scrollIntoView 时留出边距 */
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .toc::-webkit-scrollbar{display:none;}
+
+    .toc button{
+      flex:0 0 auto;                   /* 关键：不被压缩，章节名完整显示 */
+      font-size:.85rem;
+      padding:7px 14px;
+      border-radius:999px;
+      background:rgba(154,59,44,.06);
+      border:1px solid transparent;
+    }
+    .toc button.active{
+      background:rgba(154,59,44,.13);
+      border-color:rgba(154,59,44,.28);
+    }
+
+    .content{padding:22px 16px 120px;}
+    .chapter-title{font-size:1.2rem;}
+    .card{padding:14px 16px 4px;}
+    .card-body p{font-size:1rem;line-height:2;}
+    .nav{left:0;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <h1 class="brand">道德经</h1>
+    <p class="brand-sub">帛书 · 传世 对照</p>
+    <nav class="toc" id="toc" aria-label="章节目录"></nav>
+  </aside>
+
+  <main class="content" id="content">
+    <article class="reader" id="reader"></article>
+
+    <section class="fallback" id="fallback" hidden>
+      <h2>未能读取「道德经对比.md」</h2>
+      <p class="err" id="errMsg"></p>
+      <p>如果地址栏以 <code>file://</code> 开头（也就是直接双击打开网页），
+         浏览器出于安全策略会禁止网页读取本地文件——这是正常现象。</p>
+      <p>请在存放这两个文件的目录下启动一个本地服务器：</p>
+      <pre>python -m http.server 8000
+# 或者
+npx serve</pre>
+      <p>然后访问 <code>http://localhost:8000/</code> 即可。</p>
+      <p>也可以先在这里手动选择文件：</p>
+      <input type="file" id="filePicker" accept=".md,.txt,.markdown,text/plain,text/markdown">
+      <p class="tip">提示：md 文件需保存为 UTF-8 编码，否则中文会显示为乱码。</p>
+    </section>
+  </main>
+</div>
+
+<div class="nav" id="nav" hidden>
+  <div class="nav-inner">
+    <button id="prevBtn" type="button">‹ 上一章</button>
+    <span class="pos" id="pos"></span>
+    <button id="nextBtn" type="button">下一章 ›</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var MD_URL = '道德经对比.md';
+
+  var els = {
+    toc:      document.getElementById('toc'),
+    reader:   document.getElementById('reader'),
+    fallback: document.getElementById('fallback'),
+    errMsg:   document.getElementById('errMsg'),
+    content:  document.getElementById('content'),
+    nav:      document.getElementById('nav'),
+    prev:     document.getElementById('prevBtn'),
+    next:     document.getElementById('nextBtn'),
+    pos:      document.getElementById('pos'),
+    picker:   document.getElementById('filePicker')
+  };
+
+  var chapters = [];
+  var index = 0;
+
+  /* ================= 工具 ================= */
+  var ESC = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) { return ESC[c]; });
+  }
+  // 把 ①②③ 这类序号包一层，便于高亮
+  function decorate(s) {
+    return escapeHtml(s).replace(/([①②③④⑤⑥⑦⑧⑨⑩])/g, '<span class="mark">$1</span>');
+  }
+
+  /* ================= 解析 Markdown ================= */
+  // 结构：
+  //   ### 第一章：
+  //   **帛书版：**       ← 小节标题
+  //   正文段落...
+  function parseMd(text) {
+    var lines = String(text).replace(/^\uFEFF/, '').split(/\r?\n/);
+    var list = [];
+    var cur = null;
+    var sec = null;
+
+    function pushChapter(title) {
+      cur = { title: title, sections: [] };
+      list.push(cur);
+      sec = null;
+    }
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line) continue;
+
+      // 一级标题：# ~ ###### 第X章
+      var m = line.match(/^#{1,6}\s*(.+?)\s*$/);
+      if (m) {
+        pushChapter(m[1].replace(/[：:]\s*$/, '').trim());
+        continue;
+      }
+
+      // 小节标题：**帛书版：**
+      m = line.match(/^\*\*(.+?)\*\*\s*$/);
+      if (m) {
+        if (!cur) pushChapter('道德经');
+        sec = { name: m[1].replace(/[：:]\s*$/, '').trim(), lines: [] };
+        cur.sections.push(sec);
+        continue;
+      }
+
+      // 普通正文行
+      if (!sec) {
+        if (!cur) pushChapter('道德经');
+        sec = { name: '', lines: [] };
+        cur.sections.push(sec);
+      }
+      sec.lines.push(line);
+    }
+
+    // 丢掉完全没有内容的小节 / 章节
+    return list
+      .map(function (c) {
+        return {
+          title: c.title,
+          sections: c.sections.filter(function (s) { return s.lines.length > 0; })
+        };
+      })
+      .filter(function (c) { return c.sections.length > 0; });
+  }
+
+  /* ================= 渲染 ================= */
+  var SECTION_STYLE = {
+    '帛书版':      { cls: 'bo',    label: '帛书版' },
+    '传世版':      { cls: 'chuan', label: '传世版' },
+    '版本重大差异': { cls: 'diff',  label: '版本重大差异' },
+    '直译':        { cls: 'zhi',   label: '直译' }
+  };
+
+  function pickSection(ch, keyword) {
+    for (var i = 0; i < ch.sections.length; i++) {
+      if (ch.sections[i].name.indexOf(keyword) !== -1) return ch.sections[i];
+    }
+    return null;
+  }
+
+  // 普通段落卡片
+  function makeCard(title, cls, lines) {
+    var card = document.createElement('section');
+    card.className = 'card ' + cls;
+
+    var head = document.createElement('div');
+    head.className = 'card-head';
+    head.textContent = title;
+    card.appendChild(head);
+
+    var body = document.createElement('div');
+    body.className = 'card-body';
+    lines.forEach(function (line) {
+      var p = document.createElement('p');
+      p.innerHTML = decorate(line);
+      body.appendChild(p);
+    });
+    card.appendChild(body);
+    return card;
+  }
+
+  // 「版本重大差异」卡片：逐条拆出 ①②③
+  function makeDiffCard(title, cls, lines) {
+    var card = document.createElement('section');
+    card.className = 'card ' + cls;
+
+    var head = document.createElement('div');
+    head.className = 'card-head';
+    head.textContent = title;
+    card.appendChild(head);
+
+    var body = document.createElement('div');
+    body.className = 'card-body';
+
+    lines.forEach(function (line) {
+      var row = document.createElement('div');
+      row.className = 'diff-item';
+
+      var m = line.match(/^([①②③④⑤⑥⑦⑧⑨⑩])\s*(.*)$/);
+      if (m) {
+        var no = document.createElement('span');
+        no.className = 'no';
+        no.textContent = m[1];
+        row.appendChild(no);
+
+        var p = document.createElement('p');
+        p.innerHTML = decorate(m[2]);
+        row.appendChild(p);
+      } else {
+        var p2 = document.createElement('p');
+        p2.innerHTML = decorate(line);
+        row.appendChild(p2);
+      }
+      body.appendChild(row);
+    });
+
+    card.appendChild(body);
+    return card;
+  }
+
+  function renderToc() {
+    els.toc.innerHTML = '';
+    chapters.forEach(function (ch, i) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = ch.title;
+      btn.title = ch.title;
+      btn.addEventListener('click', function () { show(i); });
+      els.toc.appendChild(btn);
+    });
+  }
+
+  function show(i) {
+    if (!chapters.length) return;
+    index = Math.min(Math.max(i, 0), chapters.length - 1);
+    var ch = chapters[index];
+
+    els.reader.innerHTML = '';
+
+    var h2 = document.createElement('h2');
+    h2.className = 'chapter-title';
+    h2.textContent = ch.title;
+    els.reader.appendChild(h2);
+
+    var bo    = pickSection(ch, '帛书');
+    var chuan = pickSection(ch, '传世');
+    var diff  = pickSection(ch, '版本') || pickSection(ch, '差异');
+    var zhi   = pickSection(ch, '直译');
+
+    // 帛书 / 传世 并排
+    if (bo || chuan) {
+      var grid = document.createElement('div');
+      grid.className = 'compare';
+      if (bo)    grid.appendChild(makeCard('帛书版', 'bo', bo.lines));
+      if (chuan) grid.appendChild(makeCard('传世版', 'chuan', chuan.lines));
+      els.reader.appendChild(grid);
+    }
+
+    // 版本差异
+    if (diff) {
+      els.reader.appendChild(makeDiffCard('版本重大差异', 'diff', diff.lines));
+    }
+
+    // 直译
+    if (zhi) {
+      els.reader.appendChild(makeCard('直译', 'zhi', zhi.lines));
+    }
+
+    // 兜底：其余未识别的小节
+    ch.sections.forEach(function (s) {
+      if (s === bo || s === chuan || s === diff || s === zhi) return;
+      els.reader.appendChild(makeCard(s.name || '正文', 'zhi', s.lines));
+    });
+
+    // 目录高亮
+    Array.prototype.forEach.call(els.toc.children, function (b, k) {
+      b.classList.toggle('active', k === index);
+    });
+    var active = els.toc.children[index];
+    if (active && active.scrollIntoView) {
+      active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+
+    els.pos.textContent = (index + 1) + ' / ' + chapters.length;
+    els.prev.disabled = (index === 0);
+    els.next.disabled = (index === chapters.length - 1);
+
+    els.content.scrollTop = 0;
+    document.title = '道德经 · ' + ch.title;
+  }
+
+  /* ================= 载入 ================= */
+  function start(text) {
+    chapters = parseMd(text);
+    if (!chapters.length) {
+      fail('文件里没有解析到可显示的章节。');
+      return;
+    }
+    els.fallback.hidden = true;
+    els.reader.hidden = false;
+    els.nav.hidden = false;
+    renderToc();
+    show(0);
+  }
+
+  function fail(msg) {
+    els.reader.hidden = true;
+    els.nav.hidden = true;
+    els.fallback.hidden = false;
+    els.errMsg.textContent = msg ? ('（' + msg + '）') : '';
+  }
+
+  function load() {
+    fetch(encodeURI(MD_URL), { cache: 'no-cache' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+        return res.text();
+      })
+      .then(start)
+      .catch(function (e) {
+        fail(e && e.message ? e.message : '未知错误');
+      });
+  }
+
+  /* ================= 交互 ================= */
+  els.prev.addEventListener('click', function () { show(index - 1); });
+  els.next.addEventListener('click', function () { show(index + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === 'ArrowLeft')  show(index - 1);
+    if (e.key === 'ArrowRight') show(index + 1);
+  });
+
+  els.picker.addEventListener('change', function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () { start(reader.result); };
+    reader.onerror = function () { fail('读取文件失败'); };
+    reader.readAsText(file, 'utf-8');
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

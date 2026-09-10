@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>般若波罗蜜多心经</title>
+<style>
+  :root{
+    --paper: #f6f1e6;
+    --ink: #312d27;
+    --ink-soft: #6a6154;
+    --gold: #b08d57;
+    --gold-deep: #8f6f3d;
+    --line: rgba(176, 141, 87, .32);
+    --base: clamp(1.02rem, 0.86rem + 0.55vw, 1.24rem);
+    --scale: 1;
+  }
+
+  *, *::before, *::after{ box-sizing: border-box; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin: 0;
+    min-height: 100vh;
+    color: var(--ink);
+    background-color: var(--paper);
+    background-image:
+      radial-gradient(circle at 15% 6%, #fffdf7 0%, rgba(255,253,247,0) 46%),
+      radial-gradient(circle at 88% 90%, #efe5d2 0%, rgba(239,229,210,0) 54%);
+    font-family: "Kaiti SC", "STKaiti", "KaiTi", "楷体",
+                 "Songti SC", "Noto Serif SC", "Source Han Serif SC", serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* 宣纸颗粒质感 */
+  body::before{
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: .07;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ── 阅读进度 ─────────────────────────── */
+  .progress{
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    width: 0;
+    z-index: 60;
+    background: linear-gradient(90deg, #d5b981, var(--gold-deep));
+    box-shadow: 0 0 8px rgba(176,141,87,.5);
+    transition: width .12s linear;
+  }
+
+  /* ── 页面主体 ─────────────────────────── */
+  .page{
+    position: relative;
+    z-index: 2;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 78px 34px 90px;
+  }
+
+  /* ── 标题区 ───────────────────────────── */
+  .header{ text-align: center; }
+
+  .eyebrow{
+    margin: 0 0 24px;
+    font-size: .78rem;
+    letter-spacing: .34em;
+    text-indent: .34em;
+    color: var(--gold-deep);
+    opacity: .85;
+  }
+
+  h1{
+    margin: 0;
+    font-size: clamp(2.5rem, 7vw, 3.8rem);
+    font-weight: 400;
+    letter-spacing: .22em;
+    text-indent: .22em;
+    color: #29251f;
+    text-shadow: 0 1px 0 rgba(255,255,255,.7);
+  }
+
+  .sub{
+    margin: 16px 0 0;
+    font-size: .86rem;
+    letter-spacing: .18em;
+    color: var(--ink-soft);
+    opacity: .72;
+  }
+
+  .rule{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 34px 0 52px;
+  }
+  .rule::before,
+  .rule::after{
+    content: "";
+    flex: 0 1 92px;
+    height: 1px;
+  }
+  .rule::before{ background: linear-gradient(to right, transparent, var(--gold)); }
+  .rule::after { background: linear-gradient(to left,  transparent, var(--gold)); }
+  .rule span{
+    flex: none;
+    width: 6px; height: 6px;
+    background: var(--gold);
+    opacity: .85;
+    transform: rotate(45deg);
+  }
+
+  /* ── 经文 ─────────────────────────────── */
+  .sutra p{
+    margin: 0 0 1.55em;
+    font-size: calc(var(--base) * var(--scale));
+    line-height: 2.32;
+    letter-spacing: .035em;
+    text-align: justify;
+    text-justify: inter-ideograph;
+    color: var(--ink);
+    transition: color .35s ease;
+    animation: rise .9s cubic-bezier(.22,.8,.3,1) both;
+  }
+
+  .sutra p:hover{ color: #1e1a15; }
+
+  .sutra p:last-child{ margin-bottom: 0; }
+
+  /* 咒语部分 */
+  .sutra p.mantra{
+    color: var(--gold-deep);
+    letter-spacing: .12em;
+    font-size: calc(var(--base) * var(--scale) * 1.06);
+    text-shadow: 0 0 22px rgba(176,141,87,.18);
+  }
+
+  @keyframes rise{
+    from{ opacity: 0; transform: translateY(16px); }
+    to  { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── 落款印章 ─────────────────────────── */
+  .footer{
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 64px;
+  }
+
+  .seal{
+    width: 54px;
+    height: 54px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    background: #b03a2e;
+    color: #fdf8ef;
+    font-size: .82rem;
+    line-height: 1.05;
+    border-radius: 5px;
+    opacity: .9;
+    box-shadow:
+      inset 0 0 0 1.5px rgba(253,248,239,.45),
+      0 3px 12px rgba(176,58,46,.22);
+    user-select: none;
+  }
+
+  /* ── 控制按钮 ─────────────────────────── */
+  .controls{
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .controls button{
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: rgba(255,253,248,.82);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: .9rem;
+    cursor: pointer;
+    transition: color .25s, border-color .25s, transform .25s, box-shadow .25s;
+  }
+
+  .controls button:hover{
+    color: var(--gold-deep);
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(176,141,87,.2);
+  }
+
+  .controls button:active{ transform: translateY(0) scale(.95); }
+
+  /* ── 竖排模式 ─────────────────────────── */
+  body.vertical .sutra{
+    writing-mode: vertical-rl;
+    height: 62vh;
+    min-height: 340px;
+    padding: 20px 14px;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+
+  body.vertical .sutra p{
+    margin: 0 0 0 1.8em;          /* 竖排时表现为列间距 */
+    text-align: start;
+    line-height: 2.05;
+    animation: none;
+    opacity: 1;
+  }
+
+  body.vertical .sutra p:last-child{ margin-left: 0; }
+
+  body.vertical .sutra::-webkit-scrollbar{ height: 6px; }
+  body.vertical .sutra::-webkit-scrollbar-thumb{
+    background: var(--line);
+    border-radius: 3px;
+  }
+
+  /* ── 响应式 ───────────────────────────── */
+  @media (max-width: 560px){
+    .page{ padding: 56px 22px 72px; }
+    .rule{ margin: 28px 0 40px; }
+    .controls{ right: 14px; bottom: 14px; }
+    .controls button{ width: 40px; height: 40px; }
+    .sutra p{ line-height: 2.2; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+
+<body>
+
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <div class="page">
+
+    <header class="header">
+      <p class="eyebrow">唐三藏法師玄奘奉詔譯</p>
+      <h1>心經</h1>
+      <p class="sub">般若波羅蜜多心經</p>
+      <div class="rule"><span></span></div>
+    </header>
+
+    <main class="sutra" id="sutra">
+      <p>观自在菩萨，行深般若波罗蜜多时，照见五蕴皆空，度一切苦厄。</p>
+
+      <p>舍利子，色不异空，空不异色，色即是空，空即是色，受想行识，亦复如是。</p>
+
+      <p>舍利子，是诸法空相，不生不灭，不垢不净，不增不减。</p>
+
+      <p>是故空中无色，无受想行识，无眼耳鼻舌身意，无色声香味触法，无眼界，乃至无意识界。</p>
+
+      <p>无无明，亦无无明尽，乃至无老死，亦无老死尽。</p>
+
+      <p>无苦集灭道，无智亦无得。</p>
+
+      <p>以无所得故，菩提萨埵，依般若波罗蜜多故，心无挂碍；无挂碍故，无有恐怖，远离颠倒梦想，究竟涅槃。</p>
+
+      <p>三世诸佛，依般若波罗蜜多故，得阿耨多罗三藐三菩提。</p>
+
+      <p>故知般若波罗蜜多，是大神咒，是大明咒，是无上咒，是无等等咒，能除一切苦，真实不虚。</p>
+
+      <p>故说般若波罗蜜多咒，即说咒曰：</p>
+
+      <p class="mantra">揭谛揭谛，波罗揭谛，波罗僧揭谛，菩提萨婆诃。</p>
+    </main>
+
+    <footer class="footer">
+      <div class="seal" aria-hidden="true"><span>心</span><span>经</span></div>
+    </footer>
+
+  </div>
+
+  <div class="controls">
+    <button id="btn-layout" type="button" title="切换竖排 / 横排">竖</button>
+    <button id="btn-bigger" type="button" title="放大字号">大</button>
+    <button id="btn-smaller" type="button" title="缩小字号">小</button>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  var root = document.documentElement;
+
+  /* ── 逐段淡入（错峰） ────────────────── */
+  var paras = document.querySelectorAll('.sutra p');
+  paras.forEach(function (p, i) {
+    p.style.animationDelay = (i * 0.07) + 's';
+  });
+
+  /* ── 阅读进度条 ─────────────────────── */
+  var bar = document.getElementById('progress');
+
+  function updateProgress() {
+    var doc = document.documentElement;
+    var max = doc.scrollHeight - doc.clientHeight;
+    var y = window.pageYOffset || doc.scrollTop || 0;
+    bar.style.width = (max > 0 ? Math.min(y / max, 1) * 100 : 0) + '%';
+  }
+
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  window.addEventListener('resize', updateProgress);
+  updateProgress();
+
+  /* ── 竖排 / 横排切换 ─────────────────── */
+  var btnLayout = document.getElementById('btn-layout');
+
+  btnLayout.addEventListener('click', function () {
+    var vertical = document.body.classList.toggle('vertical');
+    btnLayout.textContent = vertical ? '横' : '竖';
+    btnLayout.title = vertical ? '切换为横排' : '切换为竖排';
+    updateProgress();
+  });
+
+  /* ── 字号调节 ───────────────────────── */
+  var scale = 1;
+  var MIN = 0.8, MAX = 1.6, STEP = 0.1;
+
+  function applyScale() {
+    root.style.setProperty('--scale', scale.toFixed(2));
+    updateProgress();
+  }
+
+  document.getElementById('btn-bigger').addEventListener('click', function () {
+    scale = Math.min(MAX, +(scale + STEP).toFixed(2));
+    applyScale();
+  });
+
+  document.getElementById('btn-smaller').addEventListener('click', function () {
+    scale = Math.max(MIN, +(scale - STEP).toFixed(2));
+    applyScale();
+  });
+})();
+</script>
+
+</body>
+</html>
