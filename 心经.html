@@ -25,13 +25,22 @@
     min-height: 100vh;
     color: var(--ink);
     background-color: var(--paper);
-    background-image:
-      radial-gradient(circle at 15% 6%, #fffdf7 0%, rgba(255,253,247,0) 46%),
-      radial-gradient(circle at 88% 90%, #efe5d2 0%, rgba(239,229,210,0) 54%);
+    /* 不再在这里写 background-image */
     font-family: "Kaiti SC", "STKaiti", "KaiTi", "楷体",
                  "Songti SC", "Noto Serif SC", "Source Han Serif SC", serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+  }
+
+  body::after{
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 15% 6%, #fffdf7 0%, transparent 46%),
+      radial-gradient(circle at 88% 90%, #efe5d2 0%, transparent 54%);
   }
 
   /* 宣纸颗粒质感 */
@@ -223,6 +232,19 @@
     overflow: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--line) transparent;
+
+    /* 关键：收缩到内容宽度，并水平居中 */
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* 竖排时减小页面左右内边距，给列更多空间 */
+  body.vertical .page{
+    max-width: 100%;
+    padding-left: 18px;
+    padding-right: 18px;
   }
 
   body.vertical .sutra p{

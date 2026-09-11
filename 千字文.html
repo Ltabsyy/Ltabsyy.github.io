@@ -96,11 +96,14 @@
     flex-direction:column;
     gap:6px;
   }
+
+  /* 电脑端：每行 4 句 */
   .stanza{
     display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:6px 26px;
+    grid-template-columns:repeat(4, 1fr);
+    gap:6px 20px;
   }
+
   .verse{
     text-align:center;
     font-size:clamp(19px,2.7vw,24px);
@@ -119,7 +122,13 @@
       background-color .35s ease,
       color .35s ease;
   }
-  .stanza .verse:nth-child(2){ transition-delay:.1s; }
+
+  /* 同组内逐句浮现的延迟 */
+  .stanza .verse:nth-child(1){ transition-delay:0s; }
+  .stanza .verse:nth-child(2){ transition-delay:.08s; }
+  .stanza .verse:nth-child(3){ transition-delay:.16s; }
+  .stanza .verse:nth-child(4){ transition-delay:.24s; }
+
   .verse.show{ opacity:1; transform:none; }
   .verse:hover{
     background:#f6efdf;
@@ -158,13 +167,22 @@
     flex:none;
   }
 
-  /* ---------- 响应式 ---------- */
+  /* ---------- 响应式：手机端每行 2 句 ---------- */
   @media (max-width:680px){
     body{ padding:26px 10px 60px; }
     .paper{ padding:40px 24px 46px; }
     .paper::after{ display:none; }
-    .stanza{ grid-template-columns:1fr; gap:2px; }
-    .stanza .verse:nth-child(2){ transition-delay:0s; }
+
+    .stanza{
+      grid-template-columns:repeat(2, 1fr);
+      gap:2px 12px;
+    }
+
+    .stanza .verse:nth-child(1){ transition-delay:0s; }
+    .stanza .verse:nth-child(2){ transition-delay:.08s; }
+    .stanza .verse:nth-child(3){ transition-delay:.16s; }
+    .stanza .verse:nth-child(4){ transition-delay:.24s; }
+
     .foot{ justify-content:center; }
   }
 </style>
@@ -261,14 +279,14 @@
   /* 按逗号、句号切分成四字短语 */
   const phrases = SOURCE.replace(/\s+/g, '').split(/[，。]/).filter(Boolean);
 
-  /* 生成 DOM：两句一行 */
+  /* 生成 DOM：每 4 句为一组，电脑一行显示，手机自动折成两行 */
   const content = document.getElementById('content');
   const frag = document.createDocumentFragment();
 
-  for (let i = 0; i < phrases.length; i += 2) {
+  for (let i = 0; i < phrases.length; i += 4) {
     const row = document.createElement('div');
     row.className = 'stanza';
-    for (let j = i; j < i + 2 && j < phrases.length; j++) {
+    for (let j = i; j < i + 4 && j < phrases.length; j++) {
       const span = document.createElement('span');
       span.className = 'verse';
       span.textContent = phrases[j];

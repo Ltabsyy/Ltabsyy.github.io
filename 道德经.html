@@ -135,7 +135,15 @@
   }
 
   /* ---------- 底部翻页 ---------- */
-  .nav{position:fixed;left:224px;right:0;bottom:20px;display:flex;justify-content:center;pointer-events:none;}
+  .nav{
+    position:fixed;left:224px;right:0;bottom:20px;
+    display:flex;justify-content:center;pointer-events:none;
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  .nav.nav-hidden{
+    opacity:0;
+    transform:translateY(16px);
+  }
   .nav-inner{
     pointer-events:auto;display:flex;align-items:center;gap:4px;
     padding:5px 6px;border:1px solid var(--line);border-radius:999px;
@@ -476,6 +484,8 @@ npx serve</pre>
     els.next.disabled = (index === chapters.length - 1);
 
     els.content.scrollTop = 0;
+    clearTimeout(navTimer);
+    els.nav.classList.remove('nav-hidden');
     document.title = '道德经 · ' + ch.title;
   }
 
@@ -513,6 +523,17 @@ npx serve</pre>
   }
 
   /* ================= 交互 ================= */
+  // 滚动时淡出翻页条，停手 1.2 秒后再出现
+  var navTimer = null;
+  function fadeNav() {
+    els.nav.classList.add('nav-hidden');
+    clearTimeout(navTimer);
+    navTimer = setTimeout(function () {
+      els.nav.classList.remove('nav-hidden');
+    }, 1200);
+  }
+  els.content.addEventListener('scroll', fadeNav, { passive: true });
+  window.addEventListener('scroll', fadeNav, { passive: true });
   els.prev.addEventListener('click', function () { show(index - 1); });
   els.next.addEventListener('click', function () { show(index + 1); });
 

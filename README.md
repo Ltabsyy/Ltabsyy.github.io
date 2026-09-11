@@ -72,7 +72,7 @@ GUI/数学/物理库 **GGCC** [https://github.com/Ltabsyy/GGCC](https://github.c
 
 [跳转知乎专栏查看](https://www.zhihu.com/column/c_1949970593186293163)
 
-[使用HTML文章集工具查看](DS创作选集.html)
+[使用HTML文章集工具查看](DS创作选集.html)（选择对话框不要点，稍等5秒加载文章）
 
 |     |     |     |
 | --- | --- | --- |
@@ -86,3 +86,5 @@ GUI/数学/物理库 **GGCC** [https://github.com/Ltabsyy/GGCC](https://github.c
 |揽月入怀|似有似无|从无到有|
 |牛头同化现象|洛谷即是青山|有相无相|
 |要有暗|被训练的灵魂|
+
+[打蚊技巧](打蚊技巧.html)

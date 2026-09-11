@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>打蚊研究 · 实战手册</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  :root{
+    --bg:#0c0e13;
+    --panel:#151a23;
+    --panel2:#1a2130;
+    --line:#252d3c;
+    --text:#e7eaf1;
+    --muted:#8892a6;
+    --red:#e5484d;
+    --red-soft:rgba(229,72,77,.12);
+    --gold:#f0b429;
+  }
+
+  html{scroll-behavior:smooth}
+
+  body{
+    background:
+      radial-gradient(1100px 560px at 50% -220px, #1c2432 0%, transparent 72%),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.85;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+
+  .wrap{max-width:900px;margin:0 auto;padding:0 20px}
+
+  /* ============ HERO ============ */
+  .hero{
+    position:relative;
+    padding:80px 0 56px;
+    text-align:center;
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";
+    position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+    width:120px;height:2px;
+    background:linear-gradient(90deg,transparent,var(--red),transparent);
+  }
+  .kicker{
+    display:inline-block;
+    font-size:.75rem;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--red);
+    border:1px solid rgba(229,72,77,.35);
+    background:var(--red-soft);
+    padding:5px 14px;
+    border-radius:999px;
+    margin-bottom:22px;
+  }
+  .hero h1{
+    font-size:clamp(2.4rem,7.5vw,4.2rem);
+    line-height:1.08;
+    letter-spacing:-.035em;
+    font-weight:800;
+    background:linear-gradient(180deg,#fff 20%,#9aa6bd 130%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .hero .sub{
+    margin-top:18px;
+    color:var(--muted);
+    font-size:clamp(.95rem,2.4vw,1.08rem);
+    letter-spacing:.02em;
+  }
+  .hero .meta{
+    margin-top:26px;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    font-size:.78rem;
+    color:var(--muted);
+  }
+  .hero .meta span{
+    border:1px solid var(--line);
+    background:#12161f;
+    padding:4px 12px;
+    border-radius:999px;
+  }
+
+  .fly{
+    position:absolute;
+    font-size:22px;
+    opacity:.55;
+    animation:flutter 6.5s ease-in-out infinite;
+    pointer-events:none;
+    filter:drop-shadow(0 0 10px rgba(229,72,77,.5));
+  }
+  .fly.a{top:18%;left:9%;animation-delay:-1.2s}
+  .fly.b{top:62%;right:8%;font-size:17px;animation-delay:-3.4s}
+  .fly.c{top:34%;right:16%;font-size:14px;animation-delay:-5s;opacity:.35}
+
+  @keyframes flutter{
+    0%  {transform:translate(0,0) rotate(-10deg)}
+    35% {transform:translate(18px,-16px) rotate(9deg)}
+    70% {transform:translate(-12px,-26px) rotate(-6deg)}
+    100%{transform:translate(0,0) rotate(-10deg)}
+  }
+
+  /* ============ 通用 ============ */
+  .section{margin:64px 0}
+  .section > h2{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    font-size:clamp(1.25rem,3.4vw,1.55rem);
+    letter-spacing:-.01em;
+    margin-bottom:22px;
+    font-weight:700;
+  }
+  .num{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:.72rem;
+    font-weight:600;
+    color:var(--red);
+    border:1px solid rgba(229,72,77,.4);
+    background:var(--red-soft);
+    padding:4px 10px;
+    border-radius:8px;
+    letter-spacing:.06em;
+    flex:none;
+  }
+  p{color:#c7cedd}
+  strong{color:#fff;font-weight:600}
+  em{color:var(--gold);font-style:normal}
+
+  .abstract{
+    position:relative;
+    background:linear-gradient(165deg,#1a2130,#131822);
+    border:1px solid var(--line);
+    border-left:3px solid var(--red);
+    border-radius:12px;
+    padding:22px 24px;
+    color:#aab4c8;
+    font-size:.95rem;
+  }
+  .abstract b{color:var(--text)}
+
+  /* ============ 对比卡 ============ */
+  .versus{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:14px;
+    margin-top:20px;
+  }
+  .vcard{
+    background:linear-gradient(165deg,#1a2130,#141922);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px;
+  }
+  .vcard h4{font-size:1rem;margin-bottom:14px;letter-spacing:.02em}
+  .bar-row{
+    display:flex;align-items:center;gap:10px;
+    font-size:.8rem;color:var(--muted);margin-bottom:8px;
+  }
+  .bar-row .label{width:66px;flex:none}
+  .bar{
+    flex:1;height:7px;border-radius:99px;background:#0e1219;overflow:hidden;
+  }
+  .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#e5484d,#ff8a5c)}
+  .bar.blue i{background:linear-gradient(90deg,#3d7bff,#5fd0ff)}
+  .verdict{
+    margin-top:14px;padding-top:12px;
+    border-top:1px dashed var(--line);
+    font-size:.85rem;color:var(--muted);
+  }
+  .verdict b{color:var(--red)}
+  .vcard.win .verdict b{color:#3fb950}
+
+  /* ============ 战术网格 ============ */
+  .tactics{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(272px,1fr));
+    gap:14px;
+  }
+  .tactic{
+    background:linear-gradient(165deg,#1a2130,#141922);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 20px;
+    transition:transform .25s ease,border-color .25s ease;
+  }
+  .tactic:hover{
+    transform:translateY(-3px);
+    border-color:rgba(229,72,77,.45);
+  }
+  .tactic-head{
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:10px;
+  }
+  .tactic-head .ico{font-size:1.2rem}
+  .tactic h3{font-size:.98rem;font-weight:700;letter-spacing:.01em}
+  .stars{
+    font-size:.8rem;letter-spacing:2px;color:#3a4356;margin-bottom:10px;
+  }
+  .stars b{color:var(--gold);font-weight:400}
+  .tactic p{font-size:.9rem;color:#aab4c8;line-height:1.75}
+
+  /* ============ 引用/提示 ============ */
+  .note{
+    margin-top:18px;
+    background:#121722;
+    border:1px dashed #2c3648;
+    border-radius:12px;
+    padding:16px 20px;
+    font-size:.88rem;
+    color:var(--muted);
+  }
+  .note b{color:var(--gold)}
+
+  /* ============ 列表 ============ */
+  .rules{list-style:none;display:grid;gap:10px}
+  .rules li{
+    position:relative;
+    padding:12px 16px 12px 44px;
+    background:#141922;
+    border:1px solid var(--line);
+    border-radius:11px;
+    font-size:.92rem;
+    color:#bcc5d6;
+  }
+  .rules li::before{
+    content:attr(data-i);
+    position:absolute;left:14px;top:50%;transform:translateY(-50%);
+    width:20px;height:20px;line-height:20px;text-align:center;
+    border-radius:6px;
+    background:var(--red-soft);
+    color:var(--red);
+    font-size:.7rem;font-weight:700;
+    font-family:ui-monospace,monospace;
+  }
+
+  /* ============ 实验室 ============ */
+  .lab{
+    background:linear-gradient(165deg,#171d28,#111620);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:18px;
+  }
+  .lab-stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .stat{
+    background:#0f141c;
+    border:1px solid var(--line);
+    border-radius:11px;
+    padding:10px 14px;
+  }
+  .stat .k{font-size:.72rem;color:var(--muted);letter-spacing:.1em}
+  .stat .v{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:1.3rem;font-weight:700;color:var(--text);line-height:1.3;
+  }
+  .stat .v.hot{color:var(--red)}
+
+  .arena{
+    position:relative;
+    height:340px;
+    border-radius:13px;
+    border:1px solid var(--line);
+    overflow:hidden;
+    cursor:crosshair;
+    touch-action:manipulation;
+    background:
+      repeating-linear-gradient(0deg,transparent 0 39px,rgba(255,255,255,.022) 39px 40px),
+      repeating-linear-gradient(90deg,transparent 0 39px,rgba(255,255,255,.022) 39px 40px),
+      #0b0f16;
+  }
+  .arena::after{
+    content:"点击飞出来的蚊子 · 它们会溜走";
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    font-size:.8rem;color:#2e3849;letter-spacing:.16em;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+
+  .mosquito{
+    position:absolute;
+    font-size:24px;
+    line-height:1;
+    cursor:crosshair;
+    user-select:none;
+    -webkit-user-select:none;
+    transition:transform .9s linear,opacity .3s ease;
+    filter:drop-shadow(0 0 7px rgba(229,72,77,.65));
+    will-change:transform;
+  }
+  .mosquito:active{transform:scale(.85)!important}
+  .mosquito.gone{opacity:0}
+
+  .progress{
+    margin-top:14px;
+    height:8px;
+    border-radius:99px;
+    background:#0f141c;
+    border:1px solid var(--line);
+    overflow:hidden;
+  }
+  .progress i{
+    display:block;height:100%;width:0;
+    background:linear-gradient(90deg,#e5484d,#f0b429);
+    border-radius:99px;
+    transition:width .3s ease;
+  }
+  .lab-foot{
+    margin-top:12px;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;
+    font-size:.8rem;color:var(--muted);
+  }
+  .btn{
+    background:#1c2331;
+    border:1px solid var(--line);
+    color:#bcc5d6;
+    padding:7px 16px;
+    border-radius:9px;
+    font-size:.8rem;
+    cursor:pointer;
+    font-family:inherit;
+    transition:.2s;
+  }
+  .btn:hover{border-color:rgba(229,72,77,.5);color:#fff;background:#232c3d}
+
+  /* ============ 页脚 ============ */
+  footer{
+    margin-top:80px;
+    padding:36px 0 60px;
+    border-top:1px solid var(--line);
+    text-align:center;
+    color:#5d6validity;
+    color:#5d6779;
+    font-size:.8rem;
+    line-height:2;
+  }
+  footer b{color:var(--muted)}
+
+  .totop{
+    position:fixed;
+    right:22px;bottom:22px;
+    width:42px;height:42px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:rgba(21,26,35,.9);
+    backdrop-filter:blur(8px);
+    color:var(--muted);
+    cursor:pointer;
+    font-size:1rem;
+    display:grid;place-items:center;
+    opacity:0;pointer-events:none;
+    transition:.25s;
+    z-index:50;
+  }
+  .totop.on{opacity:1;pointer-events:auto}
+  .totop:hover{color:#fff;border-color:rgba(229,72,77,.5)}
+
+  @media (max-width:560px){
+    .hero{padding:56px 0 40px}
+    .lab-stats{grid-template-columns:1fr 1fr}
+    .stat:last-child{grid-column:1 / -1}
+    .arena{height:280px}
+    .section{margin:48px 0}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ================= HERO ================= -->
+  <header class="hero">
+    <span class="fly a">🦟</span>
+    <span class="fly b">🦟</span>
+    <span class="fly c">🦟</span>
+
+    <div class="kicker">田野调查报告</div>
+    <h1>打蚊研究</h1>
+    <p class="sub">一场人类与蚊子之间，持续了数万年的非对称战争</p>
+    <div class="meta">
+      <span>实战经验总结</span>
+      <span>非官方 · 非医学</span>
+      <span>修订版 2.0</span>
+    </div>
+  </header>
+
+  <!-- ================= 摘要 ================= -->
+  <section class="section" style="margin-top:0">
+    <div class="abstract">
+      <b>摘要：</b>本文基于长期一线实战经验，系统梳理了打蚊的哲学基础、战略思路、战术动作与尸体处理规范，并提出
+      <b>「拍死量」</b>与<b>「见到量」</b>两个量化指标，用于衡量人类在局部战场上是否取得阶段性胜利。
+      结论是：<b>我们赢不了全局，但可以赢下自己这一亩三分地。</b>
+    </div>
+  </section>
+
+  <!-- ================= 1 存在意义 ================= -->
+  <section class="section">
+    <h2><span class="num">01</span>蚊子存在的意义</h2>
+    <p>
+      这是一个被反复讨论的终极问题。有人说它是食物链的一环，有人说它是生态的分解者，
+      但在一个被叮了整夜的人眼里——
+    </p>
+    <p style="margin-top:14px">
+      <strong>我的答案是没有，所以它没必要存在。</strong>
+    </p>
+    <div class="note">
+      <b>批注：</b>本结论不具有生物学效力，但具有充分的情感效力。
+    </div>
+  </section>
+
+  <!-- ================= 2 强者愈弱 ================= -->
+  <section class="section">
+    <h2><span class="num">02</span>强者愈弱，而弱者愈强</h2>
+    <p>
+      这世界上曾经出现的猛兽有很多，都能统治食物链，但大都在智人席卷世界的浪潮中灭绝了。
+      它们个体强，但生育的速度太慢。
+    </p>
+    <p style="margin-top:12px">
+      反观蚊虫、细菌、病毒，个体很弱，一掌就能打死，但永远也打不完。
+      就算灭了 <em>99.9%</em> 也能很快补回来，只是经历了一场筛选进化而已。
+    </p>
+
+    <div class="versus">
+      <div class="vcard">
+        <h4>🦁 猛兽</h4>
+        <div class="bar-row"><span class="label">个体强度</span><div class="bar"><i style="width:96%"></i></div></div>
+        <div class="bar-row"><span class="label">繁殖速度</span><div class="bar"><i style="width:16%"></i></div></div>
+        <div class="verdict">结局：<b>灭绝</b></div>
+      </div>
+      <div class="vcard win">
+        <h4>🦟 蚊 / 菌 / 毒</h4>
+        <div class="bar-row"><span class="label">个体强度</span><div class="bar blue"><i style="width:10%"></i></div></div>
+        <div class="bar-row"><span class="label">繁殖速度</span><div class="bar blue"><i style="width:98%"></i></div></div>
+        <div class="verdict">结局：<b>永不言败</b></div>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>结论：</b>在进化这场游戏里，<b>存活率</b>永远比<b>战斗力</b>重要。
+      你打死的每一只，都只是替它的后代做了一次筛选。
+    </div>
+  </section>
+
+  <!-- ================= 3 不打蚊？ ================= -->
+  <section class="section">
+    <h2><span class="num">03</span>不打蚊，行不行？</h2>
+    <ul class="rules">
+      <li data-i="①">
+        蚊子吸点血其实不算啥，说不定还能吸淤血。主要吐什么狗屁<strong>凝血酶</strong>，让人奇痒无比。
+      </li>
+      <li data-i="②">
+        <strong>蚊香？</strong>都不靠谱。谁也不知道它有没有吸到、是否进化免疫了。它还在飞着，能忍？
+      </li>
+      <li data-i="③">
+        现在搞什么<strong>不育雄蚊</strong>，感觉也没啥用。我特么冬天都能看到蚊子，最高楼层也是一堆，crazy。
+      </li>
+    </ul>
+  </section>
+
+  <!-- ================= 4 战略思路 ================= -->
+  <section class="section">
+    <h2><span class="num">04</span>打蚊大体思路</h2>
+    <p>
+      蚊子平常会打几下，感觉可能图个心理安慰吧。稍微打几天，蚊子就变成<strong>精英蚊子</strong>了，
+      闪避力极高，乱杀人类王牌飞行员。
+    </p>
+    <p style="margin-top:14px">
+      感觉处理蚊子最好就是<strong>蚊帐</strong>，加<strong>电蚊拍</strong>补充。
+      你只用管好自己一亩三分地就好了，就算漏进来，蚊子区域狭小也比较容易打死。
+      电蚊拍比手要高效很多，就是比较担心会电到自己，也比较少用。
+    </p>
+    <div class="note">
+      <b>核心思想：</b>不追求灭绝，只追求<b>局部清零</b>。把战场压缩到一个蚊帐的容积里，
+      蚊子就从「空中目标」降级为「靶场目标」。
+    </div>
+  </section>
+
+  <!-- ================= 5 具体操作 ================= -->
+  <section class="section">
+    <h2><span class="num">05</span>具体操作 · 战术手册</h2>
+
+    <div class="tactics">
+
+      <div class="tactic">
+        <div class="tactic-head"><span class="ico">🤲</span><h3>双手拍空中</h3></div>
+        <div class="stars"><b>★★</b>☆☆☆</div>
+        <p>会有<strong>指缝问题</strong>，掌风甚至可能把蚊子吹走。太用力了可能手疼，还打不中，双重损失。</p>
+      </div>
+
+      <div class="tactic">
+        <div class="tactic-head"><span class="ico">✊</span><h3>单手空中握住捏死</h3></div>
+        <div class="stars"><b>★★★</b>☆☆</div>
+        <p>如果确定在手里，<strong>多握一握</strong>，防止没死。松手后它带着伤飞走，是一种极大的精神打击。</p>
+      </div>
+
+      <div class="tactic">
+        <div class="tactic-head"><span class="ico">🖐️</span><h3>单手打物体表面</h3></div>
+        <div class="stars"><b>★★</b>☆☆☆</div>
+        <p>受地形影响大，书本、杯子、瓶瓶罐罐都是它的掩体。打完记得<strong>适当鞭尸</strong>，确认痕迹。</p>
+      </div>
+
+      <div class="tactic">
+        <div class="tactic-head"><span class="ico">🏓</span><h3>软拍连击</h3></div>
+        <div class="stars"><b>★★★★</b>☆</div>
+        <p>看见→拿起拍子有时差，可能错过。<strong>不要一堆缝的拍子</strong>。相对手来说不怕疼，可以猛猛连击。</p>
+      </div>
+
+      <div class="tactic">
+        <div class="tactic-head"><span class="ico">⚡</span><h3>电蚊拍</h3></div>
+        <div class="stars"><b>★★★★★</b></div>
+        <p>效率最高，也有时差问题，微小地形可能伸不进。<strong>当心电到自己。</strong>别问怎么知道的。</p>
+      </div>
+
+      <div class="tactic">
+        <div class="tactic-head"><span class="ico">🧍</span><h3>身体附近作战</h3></div>
+        <div class="stars"><b>★★★</b>☆☆</div>
+        <p>看情况是否击打身体、击打的强度，与身体配合。<strong>在脸附近也可以轻轻拍脸或握住捏死</strong>。</p>
+      </div>
+
+      <div class="tactic">
+        <div class="tactic-head"><span class="ico">🚽</span><h3>厕所速攻</h3></div>
+        <div class="stars"><b>★★</b>☆☆☆</div>
+        <p>最好快点结束，可能要不断<strong>扭动、转动、抖动身体</strong>。此处是蚊子最猖狂的战场之一。</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= 6 自然选择 ================= -->
+  <section class="section">
+    <h2><span class="num">06</span>自然选择控制</h2>
+    <ul class="rules">
+      <li data-i="①">精英蚊子——<strong>尽量追击</strong>，绝不放过。</li>
+      <li data-i="②">一般行动迟缓的蚊子——<strong>我不管</strong>，以起到自然选择作用。</li>
+    </ul>
+    <div class="note">
+      <b>风险提示：</b>长期执行该策略，可能反向培育出「闪避流」蚊群。
+      换言之，你以为你在做自然选择，实际上你在<b>养蛊</b>。
+    </div>
+  </section>
+
+  <!-- ================= 7 鞭尸学 ================= -->
+  <section class="section">
+    <h2><span class="num">07</span>蚊子鞭尸学</h2>
+    <ul class="rules">
+      <li data-i="①">无论如何，蚊子尸体确保<strong>死透</strong>。</li>
+      <li data-i="②">电蚊拍可以多电几次，<strong>熟透了，有一股奇异的香味</strong>，可以电到爆炸。</li>
+      <li data-i="③">不过电蚊拍打多了，可能会<strong>进化出耐电的蚊子</strong>。</li>
+    </ul>
+    <div class="note">
+      <b>学术定位：</b>鞭尸学是一门介于「强迫症」与「复仇快感」之间的交叉学科，
+      其学术价值存疑，但情绪价值极高。
+    </div>
+  </section>
+
+  <!-- ================= 8 其他虫类 ================= -->
+  <section class="section">
+    <h2><span class="num">08</span>和其他虫类对比</h2>
+    <div class="versus">
+      <div class="vcard win">
+        <h4>🪰 苍蝇</h4>
+        <p style="font-size:.9rem;color:#aab4c8">可以不管。它不咬人，只是烦。</p>
+      </div>
+      <div class="vcard win">
+        <h4>🦋 蛾子</h4>
+        <p style="font-size:.9rem;color:#aab4c8">
+          趋光，经常会跑屏幕前，打死还一堆粉，不是很好。不过相对蚊子来说，都已经很善良了。
+        </p>
+      </div>
+      <div class="vcard win">
+        <h4>🕷️ 蜘蛛</h4>
+        <p style="font-size:.9rem;color:#aab4c8">
+          家里蜘蛛<strong>不要杀</strong>，也能对蚊子起到一定抑制作用。蚊子尸体也可以<strong>喂蜘蛛</strong>，防止蜘蛛灭绝。
+        </p>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:20px">
+      <b>🪣 储水缸：</b>一眼丁真，鉴定为——<b>在养蚊子</b>。
+    </div>
+  </section>
+
+  <!-- ================= 9 击杀目标 ================= -->
+  <section class="section">
+    <h2><span class="num">09</span>击杀目标：两个核心指标</h2>
+    <p>
+      蚊子总是以为不多了，但总藏些；打死，但总能不断地冒出来。
+      为此我愿提出两个概念：
+    </p>
+
+    <div class="versus" style="margin-top:18px">
+      <div class="vcard">
+        <h4>☠️ 拍死量</h4>
+        <p style="font-size:.88rem;color:#aab4c8">你实际消灭的蚊子总数。是战果，也是体力消耗的度量。</p>
+      </div>
+      <div class="vcard">
+        <h4>👁️ 见到量</h4>
+        <p style="font-size:.88rem;color:#aab4c8">你实际目击到的蚊子总数。是压力，也是这个房间真实蚊口的下限估计。</p>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:18px">
+      <b>判定标准：</b>如果 <b>拍死量 ≥ 见到量</b>，那就认为达到了某种击杀目标。
+      <br>——注意，这只是一种「认为」。
+    </div>
+  </section>
+
+  <!-- ================= 实验室 ================= -->
+  <section class="section">
+    <h2><span class="num">10</span>实战演练场</h2>
+    <div class="lab">
+      <div class="lab-stats">
+        <div class="stat">
+          <div class="k">拍死量</div>
+          <div class="v hot" id="kills">0</div>
+        </div>
+        <div class="stat">
+          <div class="k">见到量</div>
+          <div class="v" id="sees">0</div>
+        </div>
+        <div class="stat">
+          <div class="k">完成度</div>
+          <div class="v" id="rate">0%</div>
+        </div>
+      </div>
+
+      <div class="arena" id="arena"></div>
+
+      <div class="progress"><i id="bar"></i></div>
+
+      <div class="lab-foot">
+        <span id="tip">点击飞出来的蚊子，它们过一会儿就会溜走。</span>
+        <button class="btn" id="reset">重新开始</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 页脚 ================= -->
+  <footer>
+    <b>打蚊研究 · 实战手册</b><br>
+    本文纯属个人经验总结，不构成医学建议。<br>
+    被蚊虫叮咬后若出现严重过敏反应，请及时就医。<br>
+    <span style="color:#3d4557">—— 祝各位，今晚好眠。</span>
+  </footer>
+
+</div>
+
+<button class="totop" id="totop" aria-label="回到顶部">↑</button>
+
+<script>
+(function () {
+  /* ---------------- 演练场 ---------------- */
+  var arena   = document.getElementById('arena');
+  var killsEl = document.getElementById('kills');
+  var seesEl  = document.getElementById('sees');
+  var rateEl  = document.getElementById('rate');
+  var barEl   = document.getElementById('bar');
+  var tipEl   = document.getElementById('tip');
+  var resetBtn= document.getElementById('reset');
+
+  var kills = 0, sees = 0, alive = 0;
+  var spawnTimer = null;
+  var running = true;
+
+  var TIPS = [
+    '点击飞出来的蚊子，它们过一会儿就会溜走。',
+    '蚊子会随机漂移，预判它的落点。',
+    '手速不够？想想蚊帐。',
+    '拍死量追上见到量，就算达成击杀目标。',
+    '电蚊拍效率最高，但要当心电到自己。'
+  ];
+
+  function update() {
+    killsEl.textContent = kills;
+    seesEl.textContent  = sees;
+    var r = sees ? Math.round(kills / sees * 100) : 0;
+    rateEl.textContent = r + '%';
+    barEl.style.width = Math.min(100, r) + '%';
+    if (r >= 100 && sees > 3) tipEl.textContent = '达成击杀目标 ✅ 但这只是「认为」。';
+  }
+
+  function spawn() {
+    if (!running || alive >= 5) return;
+
+    var w = arena.clientWidth;
+    var h = arena.clientHeight;
+
+    var el = document.createElement('div');
+    el.className = 'mosquito';
+    el.textContent = '🦟';
+
+    var x = 24 + Math.random() * Math.max(10, w - 70);
+    var y = 24 + Math.random() * Math.max(10, h - 70);
+    el.style.left = x + 'px';
+    el.style.top  = y + 'px';
+
+    arena.appendChild(el);
+    alive++;
+    sees++;
+    update();
+
+    /* 随机漂移 */
+    var drift = setInterval(function () {
+      var dx = (Math.random() - 0.5) * 90;
+      var dy = (Math.random() - 0.5) * 90;
+      var nx = x + dx, ny = y + dy;
+      if (nx < 4 || nx > w - 56) dx = -dx;
+      if (ny < 4 || ny > h - 56) dy = -dy;
+      el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    }, 900);
+
+    /* 超时飞走 */
+    var life = 2400 + Math.random() * 1800;
+    var escapeTimer = setTimeout(function () {
+      stop();
+      el.classList.add('gone');
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
+      alive--;
+    }, life);
+
+    function stop() {
+      clearInterval(drift);
+      clearTimeout(escapeTimer);
+    }
+
+    /* 命中 */
+    el.addEventListener('pointerdown', function (e) {
+      e.stopPropagation();
+      stop();
+      alive--;
+      kills++;
+      update();
+
+      el.style.transition = 'transform .28s ease, opacity .28s ease';
+      el.style.transform = 'scale(1.9) rotate(25deg)';
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+    });
+  }
+
+  function start() {
+    running = true;
+    spawnTimer = setInterval(spawn, 1150);
+    spawn();
+  }
+
+  function reset() {
+    running = false;
+    clearInterval(spawnTimer);
+    Array.prototype.slice.call(arena.children).forEach(function (c) {
+      if (c.parentNode) c.parentNode.removeChild(c);
+    });
+    kills = 0; sees = 0; alive = 0;
+    tipEl.textContent = TIPS[0];
+    update();
+    start();
+  }
+
+  resetBtn.addEventListener('click', reset);
+
+  /* 页面不可见时暂停刷怪 */
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      clearInterval(spawnTimer);
+    } else if (running) {
+      clearInterval(spawnTimer);
+      spawnTimer = setInterval(spawn, 1150);
+    }
+  });
+
+  update();
+  start();
+
+  /* ---------------- 回到顶部 ---------------- */
+  var totop = document.getElementById('totop');
+  window.addEventListener('scroll', function () {
+    if (window.scrollY > 500) totop.classList.add('on');
+    else totop.classList.remove('on');
+  });
+  totop.addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+})();
+</script>
+</body>
+</html>
