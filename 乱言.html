@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>乱言 · chaos-word</title>
+<style>
+  :root{
+    --bg:#0d0e11;
+    --fg:#d8d5cd;
+    --muted:#8f8b81;
+    --accent:#c8a86b;
+    --quote:#b3aa97;
+  }
+
+  *{ box-sizing:border-box; }
+
+  /* 兜底底色：滚到内容之外也不会露白 */
+  html{
+    min-height:100%;
+    background-color:var(--bg);
+  }
+
+  body{
+    margin:0;
+    min-height:100%;
+    background:transparent;          /* 渐变交给下面的固定层 */
+    color:var(--fg);
+    font-family:"Noto Serif SC","Source Han Serif SC","Songti SC","STSong","SimSun",Georgia,serif;
+    font-size:17px;
+    line-height:2.05;
+    letter-spacing:.02em;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* 固定渐变层：始终贴合视口，不随滚动重复、不产生分界线 */
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    pointer-events:none;
+    background:radial-gradient(1200px 620px at 50% -12%, #1a1c22 0%, transparent 72%);
+  }
+
+  #content{
+    max-width:44rem;
+    margin:0 auto;
+    padding:5.5rem 1.5rem 9rem;
+    animation:fade .9s ease both;
+  }
+
+  @keyframes fade{
+    from{ opacity:0; transform:translateY(10px); }
+    to  { opacity:1; transform:none; }
+  }
+
+  /* ── 块：空行分隔出的一块内容 ── */
+  .block{
+    margin:0 0 1.95em;
+  }
+  .block p{
+    margin:0;
+  }
+  /* 同一块内的多个段落（单换行产生）之间留一点点气口 */
+  .block > * + *{
+    margin-top:.55em;
+  }
+
+  /* ── 引用：被 _ 或 __ 包围的内容 ── */
+  blockquote{
+    margin:0;
+    padding:.05em 0 .05em 1.1em;
+    border-left:2px solid rgba(200,168,107,.35);
+    color:var(--quote);
+  }
+
+  /* ── 二级标题 ── */
+  h2.section{
+    display:flex;
+    align-items:center;
+    gap:1.3rem;
+    margin:5rem 0 2.6rem;
+    font-size:1.05rem;
+    font-weight:400;
+    letter-spacing:.55em;
+    text-indent:.55em;
+    color:var(--accent);
+    text-align:center;
+  }
+  h2.section:first-child{ margin-top:0; }
+  h2.section::before,
+  h2.section::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:linear-gradient(90deg,transparent,rgba(200,168,107,.38),transparent);
+  }
+
+  /* ── 读取失败时的兜底 ── */
+  .notice{
+    max-width:44rem;
+    margin:5rem auto;
+    padding:0 1.5rem;
+    color:var(--muted);
+    font-size:.95rem;
+    line-height:2;
+  }
+  .notice code{
+    color:var(--accent);
+    font-family:ui-monospace,Consolas,monospace;
+  }
+  .notice input[type=file]{
+    margin-top:1.2rem;
+    color:var(--muted);
+    font:inherit;
+    font-size:.9rem;
+  }
+
+  ::selection{
+    background:rgba(200,168,107,.25);
+  }
+
+  /* 细一点的滚动条 */
+  ::-webkit-scrollbar{ width:10px; }
+  ::-webkit-scrollbar-thumb{
+    background:rgba(200,168,107,.18);
+    border-radius:10px;
+  }
+  ::-webkit-scrollbar-track{ background:transparent; }
+</style>
+</head>
+<body>
+
+<main id="content"></main>
+
+<noscript>
+  <div class="notice">本页面需要 JavaScript 才能读取并显示 chaos-word.md。</div>
+</noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  var SOURCE = 'chaos-word.md';
+  var root = document.getElementById('content');
+
+  /* ------------------------------------------------------------------
+   * 1. 切块
+   *    - 空行（仅空白的行）=> 块与块之间的分隔
+   *    - 单个换行         => 同一块内的多个段落
+   *    - 以 ## 开头的行   => 二级标题，单独成块
+   * ------------------------------------------------------------------ */
+  function splitBlocks(text) {
+    var lines = String(text).replace(/^\uFEFF/, '').split(/\r?\n/);
+    var blocks = [];
+    var buf = null;
+
+    function flush() {
+      if (buf && buf.lines.length) blocks.push(buf);
+      buf = null;
+    }
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+
+      if (line === '') {            // 空行 => 断开
+        flush();
+        continue;
+      }
+
+      if (line.indexOf('##') === 0) { // 二级标题 => 单独一块
+        flush();
+        blocks.push({
+          type: 'heading',
+          text: line.replace(/^#+\s*/, '')
+        });
+        continue;
+      }
+
+      if (!buf) buf = { type: 'text', lines: [] };
+      buf.lines.push(line);
+    }
+    flush();
+
+    return blocks;
+  }
+
+  /* ------------------------------------------------------------------
+   * 2. 识别引用
+   *    __内容__  或  _内容_   => 引用，去掉包裹的下划线后显示
+   *    （不做任何 Markdown 解析，* 等符号原样保留）
+   * ------------------------------------------------------------------ */
+  function stripQuote(line) {
+    var m = /^__([\s\S]+)__$/.exec(line);
+    if (m) return { text: m[1].trim(), quote: true };
+
+    m = /^_([\s\S]+)_$/.exec(line);
+    if (m) return { text: m[1].trim(), quote: true };
+
+    return { text: line, quote: false };
+  }
+
+  /* ------------------------------------------------------------------
+   * 3. 渲染
+   * ------------------------------------------------------------------ */
+  function render(text) {
+    var blocks = splitBlocks(text);
+    var frag = document.createDocumentFragment();
+
+    for (var i = 0; i < blocks.length; i++) {
+      var b = blocks[i];
+
+      if (b.type === 'heading') {
+        var h = document.createElement('h2');
+        h.className = 'section';
+        h.textContent = b.text;
+        frag.appendChild(h);
+        continue;
+      }
+
+      var box = document.createElement('div');
+      box.className = 'block';
+
+      for (var j = 0; j < b.lines.length; j++) {
+        var q = stripQuote(b.lines[j]);
+        var el = document.createElement(q.quote ? 'blockquote' : 'p');
+        el.textContent = q.text;   // 一律用 textContent，避免任何意外的 HTML 注入
+        box.appendChild(el);
+      }
+
+      frag.appendChild(box);
+    }
+
+    root.innerHTML = '';
+    root.appendChild(frag);
+    window.scrollTo(0, 0);
+  }
+
+  /* ------------------------------------------------------------------
+   * 4. 读取文件
+   * ------------------------------------------------------------------ */
+  function showFallback(reason) {
+    root.innerHTML = '';
+
+    var wrap = document.createElement('div');
+    wrap.className = 'notice';
+
+    var p1 = document.createElement('p');
+    p1.appendChild(document.createTextNode('未能自动读取 '));
+    var code = document.createElement('code');
+    code.textContent = SOURCE;
+    p1.appendChild(code);
+    p1.appendChild(document.createTextNode(
+      '（' + reason + '）。请把本页面与 ' + SOURCE + ' 放在同一目录，' +
+      '并通过 HTTP 服务（如 python -m http.server）访问；也可以在下方手动选择该文件：'
+    ));
+
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.md,.txt,text/markdown,text/plain';
+    input.addEventListener('change', function () {
+      var f = input.files && input.files[0];
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function () { render(String(reader.result)); };
+      reader.readAsText(f, 'utf-8');
+    });
+
+    wrap.appendChild(p1);
+    wrap.appendChild(input);
+    root.appendChild(wrap);
+  }
+
+  function boot() {
+    fetch(SOURCE, { cache: 'no-store' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+      })
+      .then(function (text) {
+        // 有些服务器 404 时会回一个 HTML 页面，这里做个简单甄别
+        if (/^\s*<(!doctype|html|\?xml)/i.test(text)) {
+          throw new Error('返回的不是 Markdown 文本');
+        }
+        render(text);
+      })
+      .catch(function (err) {
+        showFallback(err && err.message ? err.message : String(err));
+      });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+
+</body>
+</html>
