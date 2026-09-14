@@ -76,6 +76,12 @@
     color:var(--quote);
   }
 
+  /* 同一块引用内的多个段落（单换行产生，每段都被 _ 包围）连接线条 */
+  .block > blockquote + blockquote{
+    margin-top: 0;          /* 抵消 .block > * + * 的间距 */
+    padding-top: .55em;     /* 用 padding 代替 margin 制造行距 */
+  }
+
   /* ── 二级标题 ── */
   h2.section{
     display:flex;
