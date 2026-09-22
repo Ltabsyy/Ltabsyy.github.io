@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ltabsyy's Blog | Ltabsyy</title>
+<meta name="description" content="Ltabsyy 的个人主页 —— 小游戏、开源项目与文章集合。">
+<style>
+/* ============ 主题变量 ============ */
+:root{
+  color-scheme: dark;
+  --bg:            #0a0e18;
+  --card:          #121a2b;
+  --card-2:        #162033;
+  --text:          #e8edfb;
+  --muted:         #8895b5;
+  --accent:        #5eead4;
+  --accent-2:      #8b9cff;
+  --accent-soft:   rgba(94,234,212,.12);
+  --accent-border: rgba(94,234,212,.45);
+  --border:        rgba(255,255,255,.09);
+  --shadow:        0 12px 32px rgba(0,0,0,.38);
+}
+html[data-theme="light"]{
+  color-scheme: light;
+  --bg:            #f4f6fc;
+  --card:          #ffffff;
+  --card-2:        #f7f9ff;
+  --text:          #16203a;
+  --muted:         #65708e;
+  --accent:        #0d9488;
+  --accent-2:      #4f46e5;
+  --accent-soft:   rgba(13,148,136,.10);
+  --accent-border: rgba(13,148,136,.45);
+  --border:        rgba(22,32,58,.10);
+  --shadow:        0 10px 26px rgba(30,45,90,.08);
+}
+
+/* ============ 基础 ============ */
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  margin:0;
+  min-height:100vh;
+  font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC",
+               "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  line-height:1.65;
+  color:var(--text);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  transition: background .3s, color .3s;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(900px 520px at 8% -8%,  rgba(94,234,212,.16), transparent 62%),
+    radial-gradient(820px 520px at 92% -4%, rgba(139,156,255,.18), transparent 62%),
+    radial-gradient(760px 520px at 50% 108%, rgba(244,114,182,.10), transparent 65%);
+  transition: opacity .3s;
+}
+html[data-theme="light"] body::before{ opacity:.6; }
+
+a{ color:inherit; }
+.container{ width:min(1100px, 100% - 44px); margin-inline:auto; }
+
+/* ============ 主题切换按钮 ============ */
+.theme-toggle{
+  position:fixed; top:18px; right:18px; z-index:60;
+  width:42px; height:42px; border-radius:50%;
+  display:grid; place-items:center;
+  font-size:1rem; line-height:1; cursor:pointer;
+  background:var(--card); color:var(--text);
+  border:1px solid var(--border); box-shadow:var(--shadow);
+  transition: transform .25s, border-color .25s;
+}
+.theme-toggle:hover{ transform: rotate(-18deg) scale(1.08); border-color:var(--accent-border); }
+
+/* ============ 头部 ============ */
+.hero{ padding:112px 0 56px; text-align:center; }
+.hero-title{
+  margin:0;
+  padding:.08em 0 .18em;
+  font-size: clamp(2.4rem, 7vw, 4rem);
+  font-weight:800;
+  line-height:1.22;
+  letter-spacing:-.02em;
+  background: linear-gradient(115deg, var(--text) 15%, var(--accent) 58%, var(--accent-2) 95%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+}
+.hero-tag{
+  margin:18px 0 0;
+  font-size:1.05rem; letter-spacing:.42em; text-indent:.42em;
+  color:var(--accent); font-weight:600;
+}
+.hero-sub{ margin:10px 0 0; color:var(--muted); font-size:.96rem; }
+
+.socials{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:32px; }
+.socials a{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:9px 18px; border-radius:999px;
+  font-size:.92rem; text-decoration:none;
+  background:var(--card); color:var(--text);
+  border:1px solid var(--border); box-shadow:var(--shadow);
+  transition: transform .2s, border-color .2s, color .2s, background .2s;
+}
+.socials a span{ font-size:.8rem; color:var(--muted); transition:color .2s; }
+.socials a:hover{
+  transform:translateY(-2px);
+  border-color:var(--accent-border);
+  color:var(--accent);
+  background:var(--accent-soft);
+}
+.socials a:hover span{ color:var(--accent); opacity:.75; }
+
+/* ============ 区块 ============ */
+main{ padding-bottom:20px; }
+section{ margin-top:72px; }
+
+.section-title{
+  display:flex; align-items:center; gap:12px;
+  margin:0 0 24px; font-size:1.35rem; font-weight:700;
+  letter-spacing:.02em;
+}
+.section-title::before{
+  content:""; width:4px; height:1.1em; border-radius:2px;
+  background:linear-gradient(180deg, var(--accent), var(--accent-2));
+}
+.section-title::after{
+  content:""; flex:1; height:1px;
+  background:linear-gradient(90deg, var(--border), transparent);
+}
+
+.sub-title{
+  display:flex; align-items:center; gap:9px;
+  margin:36px 0 14px; font-size:1rem; font-weight:600; color:var(--muted);
+}
+.sub-title::before{
+  content:""; width:6px; height:6px; border-radius:50%;
+  background:var(--accent); box-shadow:0 0 0 4px var(--accent-soft);
+}
+
+/* ============ 预览图 ============ */
+.preview{
+  margin:0 0 24px; border-radius:18px; overflow:hidden;
+  border:1px solid var(--border); box-shadow:var(--shadow);
+  line-height:0; background:var(--card);
+}
+.preview img{
+  width:100%; display:block; cursor:zoom-in;
+  transition: transform .45s cubic-bezier(.2,.7,.3,1);
+}
+.preview:hover img{ transform: scale(1.02); }
+
+/* ============ 卡片 ============ */
+.grid{
+  display:grid; gap:18px;
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+}
+.card{
+  position:relative;
+  display:flex; flex-direction:column; gap:10px;
+  padding:20px 20px 18px;
+  border-radius:16px;
+  background:var(--card);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  transition: transform .25s, border-color .25s, background .25s;
+}
+.card::before{
+  content:"";
+  position:absolute; inset:0 0 auto 0; height:2px;
+  background:linear-gradient(90deg, var(--accent), var(--accent-2));
+  opacity:0; transition:opacity .25s;
+}
+.card:hover{ transform:translateY(-4px); border-color:var(--accent-border); }
+.card:hover::before{ opacity:1; }
+
+.card-head{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:12px;
+}
+.card h3{ margin:0; font-size:1.12rem; font-weight:700; letter-spacing:.01em; }
+
+.abbr{
+  flex:none;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace;
+  font-size:.68rem; font-weight:700; letter-spacing:.12em;
+  padding:3px 9px; border-radius:7px;
+  color:var(--accent);
+  background:var(--accent-soft);
+  border:1px solid var(--accent-border);
+}
+.en{
+  margin:0;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace;
+  font-size:.84rem; color:var(--muted); word-break:break-word;
+}
+.en em{ font-style:normal; font-weight:700; color:var(--accent-2); }
+.desc{ margin:0; font-size:.9rem; color:var(--muted); }
+
+.actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:auto; padding-top:8px; }
+
+/* ============ 按钮 ============ */
+.btn{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:7px 14px; border-radius:9px;
+  font-size:.84rem; text-decoration:none; white-space:nowrap;
+  color:var(--muted); background:transparent;
+  border:1px solid var(--border);
+  transition: color .2s, border-color .2s, background .2s, transform .2s;
+}
+.btn::after{ content:"↗"; font-size:.78em; opacity:.7; }
+.btn:hover{
+  color:var(--accent); border-color:var(--accent-border);
+  background:var(--accent-soft); transform:translateY(-1px);
+}
+
+/* ============ 文章胶囊 ============ */
+.pills{ display:flex; flex-wrap:wrap; gap:10px; }
+.pill{
+  display:inline-flex; align-items:center;
+  padding:8px 15px; border-radius:11px;
+  font-size:.9rem; line-height:1.25;
+  background:var(--card); color:var(--text);
+  border:1px solid var(--border);
+  transition: transform .18s, border-color .18s, color .18s, background .18s;
+}
+a.pill{ text-decoration:none; }
+a.pill:hover{
+  transform:translateY(-2px);
+  color:var(--accent); border-color:var(--accent-border);
+  background:var(--accent-soft);
+}
+span.pill{ color:var(--muted); }
+span.pill:hover{ color:var(--text); border-color:var(--accent-border); }
+
+/* ============ 文章表格对齐 ============ */
+.article-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:1px;
+  margin-top:16px;
+  background:var(--border);          /* gap 露出的颜色 = 分隔线 */
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.article-cell{
+  display:flex; align-items:center; justify-content:center;
+  min-height:52px;
+  padding:12px 10px;
+  text-align:center;
+  font-size:.9rem; line-height:1.35;
+  background:var(--card);
+  color:var(--text);
+  transition:background .2s, color .2s;
+}
+.article-cell:hover{
+  background:var(--accent-soft);
+  color:var(--accent);
+}
+/* 占位格：补齐最后一行的空位，不参与交互 */
+.article-cell.is-empty{ pointer-events:none; }
+
+/*@media (max-width: 780px){
+  .article-grid{ grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px){
+  .article-grid{ grid-template-columns: 1fr; }
+  .article-cell{ min-height:46px; }
+}*/
+
+/* ============ 灯箱 ============ */
+.lightbox{
+  position:fixed; inset:0; z-index:100;
+  display:none; place-items:center; padding:24px;
+  background:rgba(4,8,16,.86);
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+  cursor:zoom-out;
+}
+.lightbox.open{ display:grid; animation: fade .2s ease; }
+.lightbox img{
+  max-width:100%; max-height:90vh; border-radius:14px;
+  box-shadow:0 24px 70px rgba(0,0,0,.65);
+}
+@keyframes fade{ from{ opacity:0 } to{ opacity:1 } }
+
+/* ============ 页脚 ============ */
+footer{
+  margin-top:96px;
+  border-top:1px solid var(--border);
+  padding:36px 0 54px;
+  text-align:center;
+  font-size:.84rem; color:var(--muted);
+}
+footer strong{ color:var(--text); font-weight:600; }
+
+/* ============ 响应式 ============ */
+@media (max-width: 640px){
+  .hero{ padding:84px 0 40px; }
+  section{ margin-top:54px; }
+  .hero-tag{ letter-spacing:.3em; text-indent:.3em; font-size:.95rem; }
+  .theme-toggle{ top:12px; right:12px; width:38px; height:38px; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; animation:none !important; }
+  html{ scroll-behavior:auto; }
+}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" aria-label="切换主题">☀️</button>
+
+<header class="hero">
+  <div class="container">
+    <h1 class="hero-title">Ltabsyy's Blog</h1>
+    <p class="hero-tag">浅尝辄止</p>
+    <p class="hero-sub">会怎么样呢？</p>
+
+    <nav class="socials">
+      <a href="https://github.com/Ltabsyy" target="_blank" rel="noopener">GitHub <span>@Ltabsyy</span></a>
+      <a href="https://space.bilibili.com/508764459" target="_blank" rel="noopener">哔哩哔哩 <span>508764459</span></a>
+      <a href="https://www.zhihu.com/people/ltabsyy" target="_blank" rel="noopener">知乎 <span>ltabsyy</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- ================= 小游戏 ================= -->
+  <section id="games">
+    <h2 class="section-title">小游戏</h2>
+
+    <figure class="preview">
+      <img src="images/屏幕截图 2025-07-17 125505.png" alt="小游戏预览图片">
+    </figure>
+
+    <div class="grid">
+
+      <article class="card">
+        <div class="card-head">
+          <h3>扫雷</h3>
+          <span class="abbr">MSR</span>
+        </div>
+        <p class="en"><em>M</em>ine<em>S</em>weeper <em>R</em>un</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/Ltabsyy/MineSweeper" target="_blank" rel="noopener">GitHub</a>
+          <a class="btn" href="https://pan.baidu.com/s/1q1OGgY_HpIPAkGEX6LPvxg?pwd=avjy" target="_blank" rel="noopener">百度网盘</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h3>数织</h3>
+          <span class="abbr">EN</span>
+        </div>
+        <p class="en"><em>E</em>asy <em>N</em>onogram</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/Ltabsyy/Nonogram" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h3>迷宫</h3>
+          <span class="abbr">MP</span>
+        </div>
+        <p class="en"><em>M</em>aze <em>P</em>ower</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/Ltabsyy/Maze" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h3>MC 红石模拟器</h3>
+          <span class="abbr">MCRS</span>
+        </div>
+        <p class="en"><em>M</em>ine<em>c</em>raft <em>R</em>edstone <em>S</em>imulator</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/Ltabsyy/Minecraft-Redstone-Simulator" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h3>数字华容道</h3>
+          <span class="abbr">HRR</span>
+        </div>
+        <p class="en"><em>H</em>ua<em>R</em>ong <em>R</em>oad</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/Ltabsyy/HuaRongRoad" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h3>舒尔特方格</h3>
+          <span class="abbr">SG</span>
+        </div>
+        <p class="en"><em>S</em>chulte <em>G</em>rid</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/Ltabsyy/SchulteGrid" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= 自制编程 / 其他 ================= -->
+  <section id="projects">
+    <h2 class="section-title">自制编程 / 其他</h2>
+
+    <div class="grid">
+
+      <article class="card">
+        <div class="card-head"><h3>LtabMCU</h3></div>
+        <p class="desc">自研单片机库</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/Ltabsyy/MCU" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><h3>Text-Editor</h3></div>
+        <p class="desc">自研代码高亮</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/Ltabsyy/Text-Editor" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><h3>Calculator</h3></div>
+        <p class="desc">表达式计算</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/Ltabsyy/Calculator" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><h3>MoLo</h3></div>
+        <p class="desc">近百款小熊猫 C++ 主题 / 配色</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/Ltabsyy/MoLo" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= 参与开发 ================= -->
+  <section id="collab">
+    <h2 class="section-title">参与开发</h2>
+
+    <div class="grid">
+
+      <article class="card">
+        <div class="card-head"><h3>小熊猫 C++</h3></div>
+        <p class="desc">C/C++ IDE</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/royqh1979/RedPanda-CPP" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><h3>xege</h3></div>
+        <p class="desc">绘图库</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/x-ege/xege" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><h3>ms-toollib</h3></div>
+        <p class="desc">扫雷算法工具箱</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/eee555/ms-toollib" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head"><h3>GGCC</h3></div>
+        <p class="desc">GUI / 数学 / 物理库</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/Ltabsyy/GGCC" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= 文章 ================= -->
+  <section id="articles">
+    <h2 class="section-title">文章</h2>
+
+    <h3 class="sub-title">引用</h3>
+    <div class="pills">
+      <a class="pill" href="心经.html">心经</a>
+      <a class="pill" href="道德经.html">道德经</a>
+      <a class="pill" href="千字文.html">千字文</a>
+      <a class="pill" href="终末之诗.html">MC 终末之诗</a>
+    </div>
+
+    <h3 class="sub-title">DeepSeek 辅助创作</h3>
+    <div class="pills">
+      <a class="pill" href="https://www.zhihu.com/column/c_1949970593186293163" target="_blank" rel="noopener">跳转知乎专栏查看 ↗</a>
+      <a class="pill" href="DS创作选集.html">使用 HTML 文章集工具查看</a>
+    </div>
+
+    <div class="article-grid">
+      <span class="article-cell">最恶未婚人</span>
+      <span class="article-cell">幸福一街</span>
+      <span class="article-cell">无形之约</span>
+      <span class="article-cell">焚身以火</span>
+      <span class="article-cell">灵与肉的誓言</span>
+      <span class="article-cell">水之予：从烈焰到青茵</span>
+      <span class="article-cell">浮生半窥</span>
+      <span class="article-cell">晚霞如画亦如泪</span>
+      <span class="article-cell">何为正常</span>
+      <span class="article-cell">蝶梦之花</span>
+      <span class="article-cell">舟半烛全</span>
+      <span class="article-cell">无水之树</span>
+      <span class="article-cell">蝶茧不离</span>
+      <span class="article-cell">如烟火之绽烂</span>
+      <span class="article-cell">风的记忆</span>
+      <span class="article-cell">大地是蜘蛛</span>
+      <span class="article-cell">风生爱</span>
+      <span class="article-cell">意义的囚笼</span>
+      <span class="article-cell">仁心空韵</span>
+      <span class="article-cell">荆棘之景</span>
+      <span class="article-cell">当局者迷</span>
+      <span class="article-cell">揽月入怀</span>
+      <span class="article-cell">似有似无</span>
+      <span class="article-cell">从无到有</span>
+      <span class="article-cell">牛头同化现象</span>
+      <span class="article-cell">洛谷即是青山</span>
+      <span class="article-cell">有相无相</span>
+      <span class="article-cell">要有暗</span>
+      <span class="article-cell">被训练的灵魂</span>
+      <span class="article-cell">悬板如梦</span>
+      <span class="article-cell">欲海慈航</span>
+      <span class="article-cell">被子是瑞士卷</span>
+      <!-- 占位格：32 篇 → 补 1 格，让 3 列排满 11 行 -->
+      <span class="article-cell is-empty" aria-hidden="true"></span>
+    </div>
+
+    <h3 class="sub-title">其他</h3>
+    <div class="pills">
+      <a class="pill" href="打蚊技巧.html">打蚊技巧</a>
+      <a class="pill" href="乱言.html">乱言</a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="container">
+    <strong>Ltabsyy's Blog</strong> · 浅尝辄止 · 会怎么样呢？
+  </div>
+</footer>
+
+<!-- 灯箱 -->
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <img src="" alt="预览大图">
+</div>
+
+<script>
+(function () {
+  /* ---------- 主题切换 ---------- */
+  var root = document.documentElement;
+  var toggle = document.getElementById('themeToggle');
+
+  function syncIcon() {
+    toggle.textContent = root.dataset.theme === 'light' ? '🌙' : '☀️';
+  }
+
+  try {
+    var saved = localStorage.getItem('ltabsyy-theme');
+    if (saved === 'light' || saved === 'dark') root.dataset.theme = saved;
+  } catch (e) {}
+
+  syncIcon();
+
+  toggle.addEventListener('click', function () {
+    root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light';
+    try { localStorage.setItem('ltabsyy-theme', root.dataset.theme); } catch (e) {}
+    syncIcon();
+  });
+
+  /* ---------- 图片灯箱 ---------- */
+  var box = document.getElementById('lightbox');
+  var boxImg = box.querySelector('img');
+
+  document.querySelectorAll('.preview img').forEach(function (img) {
+    img.addEventListener('click', function () {
+      boxImg.src = img.src;
+      boxImg.alt = img.alt || '';
+      box.classList.add('open');
+      box.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    });
+  });
+
+  function closeBox() {
+    box.classList.remove('open');
+    box.setAttribute('aria-hidden', 'true');
+    boxImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  box.addEventListener('click', closeBox);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && box.classList.contains('open')) closeBox();
+  });
+})();
+</script>
+
+</body>
+</html>
