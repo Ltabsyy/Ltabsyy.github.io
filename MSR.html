@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MineSweeper Run 详细介绍</title>
+<style>
+:root{
+  color-scheme:light;
+
+  --bg:#f2f4f9;
+  --bg-trans:rgba(242,244,249,.80);
+  --card:rgba(255,255,255,.82);      /* 改半透明，让背景网格透出 */
+  --text:#1f2328;
+  --muted:#5b6570;
+  --border:#dfe3e8;
+  --accent:#2f6feb;
+  --accent-soft:#eef3fe;
+  --code-bg:#eceff3;
+
+  /* ---- 背景装饰（浅色） ---- */
+  --grid-line:rgba(24,38,64,.045);
+  --glow-1:rgba(47,111,235,.13);
+  --glow-2:rgba(138,92,246,.11);
+  --glow-3:rgba(47,111,235,.05);
+  --shadow:0 1px 2px rgba(24,38,64,.04), 0 14px 30px -20px rgba(24,38,64,.35);
+}
+[data-theme="dark"]{
+  color-scheme:dark;
+
+  --bg:#0e1116;
+  --bg-trans:rgba(14,17,22,.80);
+  --card:rgba(26,30,38,.80);
+  --text:#e6e9ee;
+  --muted:#9aa4b0;
+  --border:#2b313a;
+  --accent:#6ea8fe;
+  --accent-soft:#1e2734;
+  --code-bg:#232a33;
+
+  /* ---- 背景装饰（深色） ---- */
+  --grid-line:rgba(255,255,255,.026);
+  --glow-1:rgba(110,168,254,.12);
+  --glow-2:rgba(138,92,246,.11);
+  --glow-3:rgba(110,168,254,.045);
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 16px 34px -20px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:96px}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.8;
+  font-size:15.5px;
+  -webkit-font-smoothing:antialiased;
+}
+/* ---------- 背景装饰层：隐隐网格 + 高光 ---------- */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:
+    radial-gradient(900px 520px at 12% -8%, var(--glow-1), transparent 62%),
+    radial-gradient(880px 520px at 88% -4%, var(--glow-2), transparent 60%),
+    radial-gradient(1100px 720px at 50% 112%, var(--glow-3), transparent 66%),
+    repeating-linear-gradient(0deg,  var(--grid-line) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 34px);
+}
+.wrap{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 18px 80px}
+
+/* ---------- 顶栏 ---------- */
+header.nav{
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  background:var(--bg-trans);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner{
+  max-width:1080px;margin:0 auto;padding:10px 18px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.brand{
+  display:flex;align-items:center;gap:9px;
+  font-weight:800;font-size:15px;letter-spacing:.3px;
+  white-space:nowrap;color:var(--text);
+}
+.brand .dot{
+  width:11px;height:11px;border-radius:3px;
+  background:#e8443a;
+  box-shadow:0 0 12px rgba(232,68,58,.8);
+}
+.nav-links{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+.nav-links a{
+  color:var(--muted);font-size:13.5px;
+  padding:5px 10px;border-radius:8px;
+  text-decoration:none;white-space:nowrap;
+  transition:.15s;
+}
+.nav-links a:hover{
+  background:var(--accent-soft);
+  color:var(--accent);
+  text-decoration:none;
+}
+.tools{display:flex;gap:6px;flex:none}
+.tools button{
+  font:inherit;font-size:12.5px;
+  padding:5px 11px;border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--muted);
+  cursor:pointer;
+  transition:.15s;
+}
+.tools button:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ---------- 头部 ---------- */
+.hero{
+  padding:64px 0 44px;
+  border-bottom:1px solid var(--border);
+}
+.kicker{
+  display:inline-block;font-size:12.5px;letter-spacing:1.6px;text-transform:uppercase;
+  color:#e8443a;border:1px solid rgba(232,68,58,.4);background:rgba(232,68,58,.08);
+  padding:4px 12px;border-radius:999px;font-weight:700;margin-bottom:20px;
+}
+.hero h1{
+  font-size:clamp(26px,4.6vw,42px);
+  line-height:1.25;margin:0 0 18px;
+  font-weight:850;letter-spacing:-.5px;
+}
+.hero h1 .hl{
+  background:linear-gradient(100deg,#e8443a,#f0b429);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.lede{font-size:16.5px;color:var(--muted);max-width:760px;margin:0 0 24px;line-height:1.8}
+.badges{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:28px}
+.badge{
+  font-size:13px;padding:6px 13px;border-radius:999px;
+  background:var(--card);border:1px solid var(--border);color:var(--muted);
+}
+.badge b{color:var(--text)}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 22px;border-radius:10px;
+  font-weight:700;font-size:14.5px;
+  border:1px solid transparent;
+  transition:.18s;text-decoration:none;
+}
+.btn:hover{text-decoration:none;transform:translateY(-1px)}
+.btn-primary{background:#e8443a;color:#fff;box-shadow:0 6px 22px rgba(232,68,58,.28)}
+.btn-primary:hover{background:#f04f45}
+.btn-ghost{background:var(--card);border-color:var(--border);color:var(--text)}
+.btn-ghost:hover{border-color:var(--accent);background:var(--accent-soft)}
+.hl-text{color:#f0b429;font-weight:700}
+
+/* ---------- 章节 ---------- */
+section{scroll-margin-top:96px}
+h2{
+  font-size:21px;
+  margin:46px 0 14px;
+  padding-left:12px;
+  border-left:4px solid var(--accent);
+  line-height:1.3;
+}
+h3{
+  font-size:16.5px;
+  margin:26px 0 10px;
+  color:var(--text);
+}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:26px}
+li{margin:6px 0}
+li::marker{color:var(--muted)}
+code{
+  font-family:"JetBrains Mono",Consolas,"Courier New",monospace;
+  font-size:.88em;
+  background:var(--code-bg);
+  padding:1.5px 6px;
+  border-radius:5px;
+  word-break:break-all;
+}
+a{color:var(--accent)}
+strong{font-weight:650}
+
+/* ---------- 折叠块 ---------- */
+details{
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--card);
+  margin:12px 0;
+  overflow:hidden;
+  transition:border-color .15s;
+}
+details[open]{border-color:var(--border)}
+details > summary{
+  cursor:pointer;
+  list-style:none;
+  padding:13px 18px;
+  font-weight:650;
+  font-size:15.5px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  user-select:none;
+  transition:background .15s;
+}
+details > summary::-webkit-details-marker{display:none}
+details > summary::before{
+  content:"";
+  flex:none;
+  width:0;height:0;
+  border-left:6px solid currentColor;
+  border-top:5px solid transparent;
+  border-bottom:5px solid transparent;
+  opacity:.5;
+  transition:transform .2s ease;
+}
+details[open] > summary::before{transform:rotate(90deg)}
+details > summary:hover{background:var(--accent-soft)}
+details .body{
+  padding:0 20px 18px 34px;
+  border-top:1px solid transparent;
+}
+details[open] .body{border-top-color:var(--border);padding-top:12px}
+
+/* 嵌套折叠块更紧凑 */
+details details{
+  background:transparent;
+  border-radius:9px;
+  margin:10px 0;
+}
+details details > summary{
+  padding:9px 14px;
+  font-size:14.5px;
+}
+details details .body{padding-left:28px;padding-right:12px;padding-bottom:12px}
+
+/* 小标签 */
+.tag{
+  display:inline-block;
+  font-size:11.5px;
+  padding:1px 8px;
+  border-radius:999px;
+  background:var(--accent-soft);
+  color:var(--accent);
+  margin-left:6px;
+  vertical-align:1px;
+  font-weight:600;
+}
+.note{
+  border-left:3px solid var(--accent);
+  background:var(--accent-soft);
+  padding:10px 14px;
+  border-radius:0 8px 8px 0;
+  margin:14px 0;
+  font-size:14.5px;
+  color:var(--text);
+}
+.note strong{color:var(--accent)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14.5px;margin:12px 0}
+.kv dt{color:var(--muted);white-space:nowrap}
+.kv dd{margin:0}
+
+/* 页脚 */
+footer{
+  margin-top:56px;
+  padding-top:22px;
+  border-top:1px solid var(--border);
+  color:var(--muted);
+  font-size:13.5px;
+  text-align:center;
+}
+.link-box{
+  display:flex;flex-wrap:wrap;gap:12px;margin:14px 0;
+}
+.link-box a{
+  flex:1 1 260px;
+  display:block;
+  padding:14px 18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--card);
+  text-decoration:none;
+  color:var(--text);
+  transition:.15s;
+}
+.link-box a:hover{border-color:var(--accent);transform:translateY(-2px)}
+.link-box a b{display:block;font-size:14.5px;margin-bottom:2px}
+.link-box a small{color:var(--muted);word-break:break-all;font-size:12.5px}
+details,
+.link-box a{
+  box-shadow:var(--shadow);
+}
+
+@media (max-width:600px){
+  body{font-size:15px}
+  .wrap{padding:0 14px 60px}
+  details .body{padding-left:18px}
+  .hero{padding:36px 0 24px}
+}
+@media (prefers-reduced-motion:reduce){
+  body::before{background:
+    repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 34px);}
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="brand"><span class="dot"></span> MineSweeper Run</div>
+    <nav class="nav-links">
+      <a href="#intro">介绍</a>
+      <a href="#features">特色</a>
+      <a href="#tutorial">教程</a>
+      <a href="#solvable">可解地图</a>
+      <a href="#pairs">数对实质</a>
+      <a href="#score">标准分数</a>
+      <a href="#controls">操作方式</a>
+      <a href="#statement">声明</a>
+      <a href="#links">链接</a>
+    </nav>
+    <div class="tools">
+      <button id="expandAll">展开全部</button>
+      <button id="collapseAll">折叠全部</button>
+      <button id="themeBtn">🌙</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<div class="hero">
+  <span class="kicker">Windows · 控制台 + 图形窗口</span>
+  <h1>MSR：一款时新、独立、<span class="hl">截然不同</span>的扫雷程序</h1>
+  <p class="lede">
+    MineSweeper Run 是一款基于 Windows 的扫雷程序，提供控制台与图形界面窗口两种形态。
+    它默认生成<span class="hl-text">可解地图</span>，内置一套完整的局面求解器，
+    把设置、历史、录像、自制地图等全部功能压缩进一个不到 250 KB 的文件里。
+  </p>
+  <div class="badges">
+    <span class="badge">控制台版 <b>&lt; 250 KB</b></span>
+    <span class="badge">窗口版 <b>&lt; 1 MB</b></span>
+    <span class="badge">地图 <b>1×1 → 256×384</b></span>
+    <span class="badge">雷数 <b>0 → 满雷</b></span>
+    <span class="badge">默认 <b>可解地图</b></span>
+  </div>
+  <div class="btns">
+    <a class="btn btn-primary" href="#links">↓ 获取程序</a>
+    <a class="btn btn-ghost" href="#features">看看它有什么不同</a>
+  </div>
+</div>
+
+<!-- ============ 介绍 ============ -->
+<section id="intro">
+<h2>介绍</h2>
+<p>MineSweeper Run 是一款基于 Windows 控制台的扫雷游戏程序，Window 版本可在图形界面窗口进行游戏。</p>
+
+<details open>
+<summary>控制台部分特性</summary>
+<div class="body">
+<ol>
+  <li>默认生成可解地图，无需面对死亡二选一的局面</li>
+  <li>地图求解器支持简单判断、逻辑推理、枚举判断、雷率计算、剩余雷数判断等完善的扫雷逻辑，且运行高效</li>
+  <li>在控制台的基于鼠标和键盘混动的操作界面，以及指令、WASD、鼠标三种操作混动的游戏界面</li>
+  <li>完整的扫雷难度支持，地图从 1×1 到 256×384，雷数从 0 到满（大地图建议使用 Window 版本）</li>
+  <li>生成缓存文件，自动保存用户设置、上一次地图和历史记录，胜利时显示打破纪录</li>
+  <li>可对外部输入的地图进行求解、游戏时按 <code>!</code> / <code>Tab</code> 对实时求解、连续生成地图并不断求解（压榨 CPU）</li>
+  <li>控制台可切换深浅模式、设置自选光标、设置是否实时显示用时和 3BV，界面个性化</li>
+  <li>隐藏功能：历史记录查看、统计和编辑，自制地图的编辑和游戏，操作记录（录像）的保存和播放等</li>
+  <li>将上述所有的一切，编译进不到 250K 的程序文件中</li>
+</ol>
+</div>
+</details>
+
+<details open>
+<summary>图形界面窗口部分特性</summary>
+<div class="body">
+<ol>
+  <li>高 DPI 缩放适配，抗锯齿，不模糊，显示大小自动适配各种屏幕分辨率</li>
+  <li><code>Ctrl+滚轮</code> 调整显示大小，<code>Ctrl+左键</code> 拖动调整地图位置，适应个性需求和大地图移动视角</li>
+  <li>点击笑脸按钮或按 <code>N</code> 重新生成地图，以及控制台鼠标模式下的其他操作逻辑</li>
+  <li>深入上游 <a href="https://github.com/x-ege/xege" target="_blank" rel="noopener">xege</a> 绘图库开发，编译程序文件小于 1M</li>
+</ol>
+</div>
+</details>
+</section>
+
+<!-- ============ 特色 ============ -->
+<section id="features">
+<h2>特色</h2>
+
+<details open>
+<summary>推荐扫雷玩家使用 MineSweeper Run 的原因</summary>
+<div class="body">
+<ol>
+  <li>默认生成可解地图，无需面对死亡二选一的局面</li>
+  <li>不统计胜率、连胜、连败信息</li>
+  <li>取消标记不会被问号阻碍</li>
+  <li>可通过按住鼠标右键拖动连续标记多个未知方块</li>
+  <li>快速翻开操作只需鼠标左键单击数字，而无需双击</li>
+  <li>仅标记雷可赢</li>
+  <li>可在键盘模式鼠标全选复制地图，以文本形式存储和交流当前局面</li>
+  <li>无鼠标用户可用键盘模式进行游戏</li>
+</ol>
+</div>
+</details>
+
+<details open>
+<summary>其他需要扫雷玩家注意的特性</summary>
+<div class="body">
+<ol>
+  <li>操作在按下时触发而非抬起时</li>
+  <li>标记可直接翻开</li>
+  <li>可通过按住鼠标左键拖动连续翻开多个未知方块</li>
+  <li>用时以秒级计算而非毫秒级（包括时间纪录、3BV/s、SS）</li>
+  <li>程序不阻止多开</li>
+</ol>
+</div>
+</details>
+</section>
+
+<!-- ============ 教程 ============ -->
+<section id="tutorial">
+<h2>教程</h2>
+
+<details>
+<summary>游戏程序的文件管理</summary>
+<div class="body">
+<p>可在 GitHub 等处下载游戏的可执行文件，文件名为 <code>MineSweeper Run + 版本号.exe</code>，点击此文件即可启动游戏程序。</p>
+<p>该程序面向 Windows 64 位，Windows 32 位用户需下载 32bit 版本，两版本功能、特性、源代码无任何区别。</p>
+<p>Window 版（或早期的 WindowTest 版）至少需 Windows Vista 系统，控制台版（无 Window 后缀）则无此要求。</p>
+<p>如想尝试在 Windows XP 系统上运行本程序 Window 版，可联系作者索取 Window 32bit XP 版本。</p>
+<p>程序可产生以 <code>minesweeper-</code> 开头的缓存文件，删除均不会影响程序正常启动，但不恰当的修改可能会影响程序正常运行。</p>
+
+<p>目前版本缓存文件至多有以下 5 个：</p>
+<ol>
+  <li><code>minesweeper-settings.txt</code><br>存储着用户设置，例如游戏难度，删除后程序启动后会使用默认设置。</li>
+  <li><code>minesweeper-lastmap.txt</code><br>存储着未结束的上一次游戏，程序启动后会优先进入上一次游戏。</li>
+  <li><code>minesweeper-records.csv</code>（旧版后缀为 <code>.txt</code>）<br>存储着扫雷历史记录，用于打破纪录显示，删除后记录会丢失，第一局有效胜利即可打破纪录。<br>从旧版本游戏（Run 3.4–5.14）更新为新版本（Run 5.15 起）时，需运行 <code>MSR Records Updater</code>。</li>
+  <li><code>minesweeper-maps.txt</code><br>存储着用户自制的扫雷地图，删除后自制的扫雷地图均会丢失。</li>
+  <li><code>minesweeper-operations</code> 文件夹<br>存储着扫雷操作记录（录像）。（Run 5.19 起）</li>
+</ol>
+
+<div class="note">
+<strong>注意：</strong>不建议对以上缓存文件做任何修改，若需移动程序位置，需同时移动可执行文件和缓存文件，使之保持在同一目录下，否则所有用户数据均会丢失。
+</div>
+
+<p>旧版本游戏更新为新版本时，仅需替换可执行文件，缓存文件一般保持兼容性，若部分设置恢复到默认状态，重新设置并保存即可。</p>
+<p>程序可多开，各程序独立运行，仅在必要时读写文件，信息不同步，可能造成丢失，不建议多开。</p>
+</div>
+</details>
+
+<details>
+<summary>基础操作</summary>
+<div class="body">
+<p>双击或右键打开游戏的可执行文件或快捷方式，即可启动游戏程序。</p>
+<p>游戏程序一般在控制台主机中运行，在 win11 系统可能为终端，右击标题栏，点击属性或设置即可修改默认终端应用程序。</p>
+<p>若 win11 用户在游玩顶级难度时，出现全屏仍不足以显示地图的局面，一般更换默认终端应用程序为控制台主机即可解决。</p>
+<p>win11 终端也可在默认值-外观更改行高、字号、字体等，具体需要自己调整，建议采用更换为控制台主机的方法。</p>
+<p>游戏程序的显示内容本质为文本，可按 <code>Ctrl+滚轮</code> 调整字体大小，若空间不足会自动换行，可拉伸窗口或全屏避免换行，使程序正常显示。</p>
+<p>有的情况中文字体不能正常显示，此时需要更换系统编码为 GBK：在设置-语言-管理语言设置-更改系统区域设置，取消勾选 <code>Beta版:使用Unicode UTF-8提供全球语言支持</code>，重启即可。如系统编码 UTF-8 有其他用处，可联系作者索取 UTF-8 版本。</p>
+<p>进入程序可在顶部看到多个方括号包围，圆括号数字开头的文本，此为“虚拟按钮”，可用鼠标点击或按键盘对应数字按下按钮。</p>
+<p>顶部的横排虚拟按钮称为“控制栏”，控制栏在游戏、设置等扫雷核心场景均存在，在顶级难度游戏时隐藏。</p>
+<p>所有可用鼠标点击的虚拟按钮均有悬浮高亮。</p>
+<p>部分场景如调试选项、地图求解功能不可用鼠标操作，必须使用键盘操作，阅读提示即可。</p>
+</div>
+</details>
+
+<details>
+<summary>游戏</summary>
+<div class="body">
+<p>点击新游戏即可进入游戏，此时可选择任意起始点，选择后程序生成地图，生成结束游戏开始计时。</p>
+<p>游戏地图采用 <code>%</code> 表示未翻开且未标记的方块，<code>#</code> 表示标记的方块，数字表示周围 8 格存在雷的数量，其中 0 显示为空格。</p>
+<p>游戏默认采用鼠标点击进行操作，可通过鼠标左键 <code>%</code> 和 <code>#</code> 翻开该方块，右键进行标记或取消标记。</p>
+<p>“标记”在某些扫雷程序也称“插旗”，程序默认认为，玩家认为标记位置为雷。</p>
+<p>当玩家执行标记操作时，剩余雷数将会更新。</p>
+<p>竞速玩家常选择无标记、仅使用翻开操作完成游戏，此时剩余雷数不会更新。</p>
+<p>当玩家翻开所有非雷方块时，即可胜利，若翻开雷，则立即结束游戏。</p>
+<p>另外，标记所有雷，且无任何多余标记时，也可胜利。</p>
+<p>游戏结束后，程序显示全部地图，其中 <code>*</code> 表示未标记的雷，<code>@</code> 表示被翻开的雷，<code>数字+#</code> 表示错误标记，其中错误标记 0 显示为 <code>_#</code>。</p>
+<p>游戏结束后，可点击新游戏再来一局，或进行其他控制栏操作。</p>
+<p>游戏时，若点击新游戏，则立即结束当前游戏，再次点击即可再来一局。</p>
+<p>游戏时，若关闭程序，下次启动时则直接回到该局游戏的先前状态。</p>
+<p>鼠标模式游戏时，点击 <code>[鼠标左键:翻开/右键:标记]</code> 可切换左右键功能。</p>
+<p>游戏时，按 <code>Q</code> 进入问号模式，此时翻开/标记操作会转换为翻开问号/标记问号，再次按 <code>Q</code> 退出问号模式，也可按 <code>E</code> 执行标记问号并退出。</p>
+<p>对于高级 120 秒以上的大部分扫雷玩家，如觉得按键过于轻浮，可在调试选项内关闭快速显示。</p>
+<p>对于高级 90 秒以下的熟练扫雷玩家，如觉得按键不跟手，可在调试选项内自行调整刷新周期，或使用 Window 版，注意确保快速显示的启用。</p>
+<p>对于大部分玩家都建议使用并适应默认的设置。</p>
+</div>
+</details>
+
+<details>
+<summary>设置</summary>
+<div class="body">
+<p>点击设置，即可进入设置页面，你可以在这里进行很多方面的设置。</p>
+<p>如需更改游戏难度，点击设置游戏难度即可选择难度。</p>
+<p>如需生成可解地图，点击设置地图生成校验，随后点击可解地图即可。</p>
+<p>当选择难以生成的难度时，地图生成校验会自动降低，手动调整可强制执行生成，但可能需要无限等待，例如全图满雷难度且起始点必非雷。</p>
+<p>当较高难度生成可解地图时，如果很快结束游戏，可能出现重复地图。</p>
+<p>当设置较为严苛的筛选条件生成筛选地图时，可能出现重复地图，或需要较长时间的等待。</p>
+<p>设置完成后，如需下次启动游戏时仍保持设置，需点击返回并保存，若直接点击控制栏或关闭程序，设置则不会在下次启动程序时保持。</p>
+<p>部分设置存在下一级页面，此时点击设置页面任意其他按钮即可不作修改关闭下一级页面。</p>
+</div>
+</details>
+
+<details>
+<summary>地图求解</summary>
+<div class="body">
+<p>可进入地图求解功能页面查看详细使用说明。</p>
+<p>若键盘操作无效，可能是启用了中文输入法，请切换到英文输入法尝试。</p>
+<p>在该页面，或键盘模式的游戏页面，存在控制台的“快速编辑”特性。</p>
+<p>若点击页面，标题栏左上角会显示 <code>选择</code> 二字，此时右键鼠标会复制选择的内容到剪贴板，若无 <code>选择</code> 二字，右键会将剪贴板中的内容粘贴。</p>
+<p>若需复制地图粘贴入此处，请勿使 <code>选择</code> 二字出现，否则剪贴板内容会被代替。</p>
+<p>在 Window 版，也可按 <code>!</code> / <code>Tab</code> 实时求解当前局面，若需复制控制台的文本地图，右击标题栏，点击属性或设置，勾选快速编辑模式即可。</p>
+</div>
+</details>
+
+<details>
+<summary>操作记录（录像）</summary>
+<div class="body">
+<p>进入设置页面并进入调试选项，输入 <code>9</code> 回车，再输入 <code>1</code> 回车，点击返回并保存，即可启用保存连续（未暂停或重启程序）且有效记录的操作记录。</p>
+<p>在主页按 <code>V</code>，将操作记录文件拖入并回车，即可播放。</p>
+<p>如果不熟悉以上操作，可自行录屏。</p>
+</div>
+</details>
+</section>
+
+<!-- ============ 可解地图说明 ============ -->
+<section id="solvable">
+<h2>可解地图说明</h2>
+<p>可解地图，指起始点必为空，并可通过不断计算当前局面解并执行，直至取得胜利的随机扫雷地图。</p>
+<p>其局面解包含 4 种情况：</p>
+
+<details>
+<summary>1. 简单解：1 个数字提供的信息</summary>
+<div class="body">
+<ol>
+  <li>如果某个数字与周围未翻开方块的个数相同，则标记该数字周围未知方块。</li>
+  <li>如果某个数字与周围标记的个数相同，则翻开该数字周围未知方块。</li>
+</ol>
+</div>
+</details>
+
+<details>
+<summary>2. 逻辑解：2 个数字提供的信息</summary>
+<div class="body">
+<ol>
+  <li>如果数对之二与数对之一之差等于已知雷数差加数对之二独占区未知方块个数，则翻开数对之一独占区未知方块。</li>
+  <li>如果数对之一与数对之二之差等于已知雷数差加数对之一独占区未知方块个数，则标记数对之一独占区未知方块。</li>
+</ol>
+<p>数对之二可能在数对之一的 5×5 共 24 个方块的范围内，其中上下左右 4 个方块称为常形逻辑解，剩余 20 个方块称为异形逻辑解。</p>
+</div>
+</details>
+
+<details>
+<summary>3. 枚举解：局部多个数字提供的信息</summary>
+<div class="body">
+<ol>
+  <li>如果某个未知方块在所有符合数字和剩余雷数的可能性中都是雷，则标记该未知方块。</li>
+  <li>如果某个未知方块在所有符合数字和剩余雷数的可能性中都不是雷，则翻开该未知方块。</li>
+</ol>
+</div>
+</details>
+
+<details>
+<summary>4. 雷率解</summary>
+<div class="body">
+<p>对地图所有未知方块枚举当前所有符合数字和剩余雷数的可能性，并对所有可能性综合分析得到剩余雷数范围，从而得到全部未知方块的雷率，如果雷率最低的一个或多个方块，在实际地图中都非雷，则翻开这些未知方块。</p>
+<p>雷率解是不确定解，但结合实际地图又是确定解；Run 1.4–4.10 版本可解地图均不排除雷率解，Run 4.11 开始排除雷率解。</p>
+</div>
+</details>
+
+<details>
+<summary>以下情况属于逻辑解</summary>
+<div class="body">
+<ul>
+  <li>等数定式及其变种（边等数及其传递、等数 T 形挖坑及其深入挖坑、等数雷传递）</li>
+  <li>21 减法及其变种（121 定式、1221 定式、32 减法）</li>
+  <li>31、42 等任何减法</li>
+</ul>
+</div>
+</details>
+
+<details>
+<summary>以下情况属于枚举解</summary>
+<div class="body">
+<ul>
+  <li>涉及 3 个及以上数字的逻辑推理（角 131、角 222、1 窗）</li>
+  <li>结合剩余雷数判断</li>
+</ul>
+</div>
+</details>
+
+<details>
+<summary>筛选式和调整式</summary>
+<div class="body">
+<p>可解地图按生成方式分为筛选式和调整式，筛选式适用于低密度、小地图难度，调整式适用于高密度、大地图难度。</p>
+<p>Run 1.4–5.22 版本仅存在筛选式可解地图生成算法，Run 5.23 开始试行引入调整式。</p>
+<p>筛选式算法性能高效，从 Run 5.22 开始，在默认地图求解器设置下，所有预设难度（包括顶级）都可在 0.1 秒以内生成。</p>
+<p>调整式算法当前仅供体验，不支持操作记录（录像）、中断（暂停或重启程序）的情况，且仅供自定义难度使用。</p>
+<p>在设置页面进入调试选项，输入 <code>2</code> 回车，再输入 <code>6</code> 回车，点击返回并保存，即可体验调整式可解地图。</p>
+</div>
+</details>
+</section>
+
+<!-- ============ 数对实质 ============ -->
+<section id="pairs">
+<h2>逻辑推理的数对实质</h2>
+
+<details>
+<summary>（1）概念</summary>
+<div class="body">
+<p>两个数字，如果它们的控制区存在交界，则称为数对。</p>
+<p>其中任意数字称为数对之一，另一数字称为数对之二。</p>
+<p>数对共同控制的区域，称为共享区，数对之一控制区与共享区之差，称为数对之一独占区，数对之二控制区与共享区之差，称为数对之二独占区。</p>
+</div>
+</details>
+
+<details>
+<summary>（2）实质</summary>
+<div class="body">
+<p>逻辑推理的数对实质是，数对之一与数对之二之差，等于其独占区雷数差。基于“任意未知区域雷数至少为 0，至多全雷”，当仅有一种可能时，实现逻辑推理。</p>
+</div>
+</details>
+
+<details>
+<summary>（3）约定</summary>
+<div class="body">
+<p>约定数对之一独占区被操作，那数对之二就是执行对数对之一独占区操作的条件。</p>
+<p>若数对之一和数对之二互换，不会改变某些区域存在解的事实，只会让数对整体转换为另一类数对。</p>
+</div>
+</details>
+
+<details>
+<summary>（4）数对分类</summary>
+<div class="body">
+<ul>
+  <li>如果数对之二独占区全已知，称为 <strong>1234 类数对</strong>，否则，称为 <strong>5678 类数对</strong>。</li>
+  <li>如果是相等数对，即数对之一与数对之二相等，即为其中的 12、56 类数对，否则，即为 34、78 类数对。</li>
+  <li>如果对数对之一独占区执行操作为 <code>@</code>（翻开），即为 1、3、5、7 类数对；</li>
+  <li>如果对数对之一独占区执行操作为 <code>#</code>（标记），即为 2、4、6、8 类数对。</li>
+</ul>
+</div>
+</details>
+
+<details>
+<summary>（5）分类数对的特征</summary>
+<div class="body">
+<p>78 类数对，实际是所有数对的通式，然而实战中一般不现场演算，熟练玩家可瞬间对数对定义的逻辑推理进行判断并操作。</p>
+<p>大多数逻辑推理为 1–5 类数对，1、3 类尤为常见。</p>
+<p>对于 1234 类数对，可通过数对之二确定共享区雷数，从而确定数对之一独占区雷数，确定操作。也被称为“有且仅有”论。</p>
+<p>对于 5678 类数对，则不存在直观的判断思路过程，常引用枚举判断进行证明，而此类解释在实战中可用性极低，必须采用“数对”论或类似的“减法公式”、“双集合模型”。</p>
+<p>对于 1234 类数对，由于数对之二独占区全已知，只需对数对之一独占区进行操作。</p>
+<p>对于 5678 类数对，由于数对之二独占区不全已知，在对数对之一独占区进行操作后，必然对数对之二独占区可进行反向操作。</p>
+<p>对于 5678 类数对，若数对之一和数对之二互换，将产生 5↔6，7↔8 的转化，若已对数对之一独占区进行操作，则会在转化后数对类型 −4，即 5→2，6→1，7→4，8→3。</p>
+</div>
+</details>
+
+<details>
+<summary>（6）操作逻辑</summary>
+<div class="body">
+<ol>
+  <li><strong>1 类数对</strong>：数对之二独占区全已知的相等数对，如果已知雷数相等，则翻开数对之一独占区未知方块；</li>
+  <li><strong>2 类数对</strong>：数对之二独占区全已知的相等数对，如果已知雷数之差等于数对之一独占区未知量，则标记数对之一独占区未知方块；</li>
+  <li><strong>3 类数对</strong>：数对之二独占区全已知的不相等数对，如果数差等于已知雷数差，则翻开数对之一独占区未知方块；</li>
+  <li><strong>4 类数对</strong>：数对之二独占区全已知的不相等数对，如果数差等于已知雷数差加数对之一独占区未知量，则标记数对之一独占区未知方块；</li>
+  <li><strong>5 类数对</strong>：数对之二独占区不全已知的相等数对，如果数对之一和数对之二独占区已知雷数之差等于数对之二独占区未知量，则翻开数对之一独占区未知方块；</li>
+  <li><strong>6 类数对</strong>：数对之二独占区不全已知的相等数对，如果数对之二和数对之一独占区已知雷数之差等于数对之一独占区未知量，则标记数对之一独占区未知方块；</li>
+  <li><strong>7 类数对</strong>：数对之二独占区不全已知的不相等数对，如果数对之二与数对之一之差等于已知雷数差加数对之二独占区未知量，则翻开数对之一独占区未知方块；</li>
+  <li><strong>8 类数对</strong>：数对之二独占区不全已知的不相等数对，如果数对之一与数对之二之差等于已知雷数差加数对之一独占区未知量，则标记数对之一独占区未知方块。</li>
+</ol>
+</div>
+</details>
+</section>
+
+<!-- ============ 标准分数 ============ -->
+<section id="score">
+<h2>标准分数说明</h2>
+
+<details>
+<summary>为什么需要 3BV/s 以外的指标</summary>
+<div class="body">
+<p>为了计算玩家在某一具体扫雷地图的发挥水平，目前广为传播的解决方案是 3BV/s，也是玩家普遍认可的“速度”指标。</p>
+<p>然而对于相同难度的不同扫雷地图，3BV 有高有低，称为大小图。</p>
+<p>以相同的扫雷水平扫完一局，小图用时短、3BV/s 低，大图用时长、3BV/s 高，这就使相同 3BV/s 的情况下大图实际比小图发挥的更差。</p>
+<p>为了在大图和小图间取得平衡，出现了 RQP、QG、STNB 等解决方案。</p>
+</div>
+</details>
+
+<details>
+<summary>RQP / QG / STNB</summary>
+<div class="body">
+<dl class="kv">
+  <dt>RQP</dt>
+  <dd>Rapport Qualité Prix：认为 3BV/s 需要除以时间来修正，计算公式：<code>(time+1)*time/solved3BV</code>，值越小越好，但并非如 QG 一样基于拟合，是没有道理的。</dd>
+  <dt>QG</dt>
+  <dd>Quality Grade：由郭锦洋提出，计算公式：<code>(time^1.7)/solved3BV</code>，值越小越好，通过拟合修正。</dd>
+  <dt>STNB</dt>
+  <dd>尸体牛逼：由郭锦洋提出，计算公式：<code>sqrt(completion)*stnbc/QG</code>，值越大越好，其中 <code>completion=solved3BV/total3BV</code>，<code>stnbc</code> 为常数，旧版的 8×8-10 难度、中级、高级分别为 47.299、153.73、435.001，新版分别为 36、162、435。</dd>
+</dl>
+<p>旧版的 STNB 是其中最为好用、较受认可的存在，然而其仅限于 3 个难度，并非任意难度，且在 <code>completion&lt;1</code> 时值偏高，另外受作者影响，其定义可能被随意更改而劣化。</p>
+<p>故从 MineSweeper Run 5.16 开始，独立提出 RDV 和 SS 的概念，SS 可横跨难度、地图、完成度评估该局玩家发挥水平，且无视上游概念更新。</p>
+</div>
+</details>
+
+<details>
+<summary>RDV 与 SS</summary>
+<div class="body">
+<dl class="kv">
+  <dt>RDV</dt>
+  <dd>Relative difficulty value，相对难度值，计算公式：<code>A(e^(n/(h*w))-1)*(h^B)*(w^C)</code>，其中 n 为雷数，h 为短边长，w 为长边长，<code>A=8.14593564</code>，<code>B=0.528462037</code>，<code>C=1.172055106</code>。该值在 3 难度等于旧版 STNB 常数，但定义域扩充到任意难度。</dd>
+  <dt>SS</dt>
+  <dd>Standard Score，标准分数，计算公式：<code>RDV*(completion^0.7)/QG</code>。在 completion 为 1 的 3 难度，值与旧版 STNB 相等。</dd>
+</dl>
+</div>
+</details>
+</section>
+
+<!-- ============ 操作方式 ============ -->
+<section id="controls">
+<h2>操作方式</h2>
+<p>在默认设置下，玩家可粗浅的认为鼠标左键即为翻开/快速翻开操作，鼠标右键即为标记/取消标记操作。</p>
+<p>以下仅为一些粗浅的介绍，尚未描述全部特性，部分特性可能会因版本变化而改变。</p>
+
+<details open>
+<summary>拖动操作</summary>
+<div class="body">
+<p>操作在按下时触发而非抬起时；标记可直接翻开；鼠标按住拖动可连续操作多个方块。</p>
+<p>拖动操作的方块，并不完全是移动路径经过的方块，对于控制台，可参考“屏蔽空格”功能。</p>
+<p>对于图形界面，适量超出路径的方块不会被触发，以减少误触，其实现因版本而异。</p>
+</div>
+</details>
+
+<details open>
+<summary>视角控制</summary>
+<div class="body">
+<p>对于图形界面，<code>Ctrl+滚轮</code> 调整显示大小；<code>Ctrl+左键</code> 拖动调整地图位置。</p>
+<p>对于控制台，仅能少量 <code>Ctrl+滚轮</code> 调整显示大小，故不建议在控制台游玩大地图。</p>
+<p>无论是游戏的开局、过程、终局，你都可以进行调整操作。</p>
+</div>
+</details>
+
+<details>
+<summary>问号模式<span class="tag">仅控制台</span></summary>
+<div class="body">
+<p>在控制台操作模式时，可按 <code>Q</code> 进入问号模式。</p>
+<p>此时翻开操作和标记操作会转化为“翻开问号”和“标记问号”，或对应问号的取消。</p>
+<p>再次按 <code>Q</code>，即退出问号模式，不执行任何操作；按 <code>E</code> 即执行所有标记问号并退出。</p>
+</div>
+</details>
+
+<details>
+<summary>中断局</summary>
+<div class="body">
+<p>游戏的中断有两种情况：暂停或重启程序。</p>
+<p>游戏过程中退出程序时，下次启动程序，直接从上一次游戏的最后一次操作时间开始继续。</p>
+<p>对于中断局的操作记录（录像），属于未定义行为。</p>
+<p>对于自制地图，不支持中断。</p>
+</div>
+</details>
+
+<details open>
+<summary>可设置项</summary>
+<div class="body">
+
+<details>
+<summary>快速标记</summary>
+<div class="body">
+<p>当对已翻开方块执行标记操作时，如果启用了“快速标记”，则会触发快速标记/取标操作。</p>
+<p>此时若周围未翻开方块（未知方块+标记方块）的数量等于数字，则标记所有未知方块；否则，若无未知方块，且标记方块数量大于数字，则取消所有标记。</p>
+</div>
+</details>
+
+<details>
+<summary>屏蔽空格<span class="tag">仅控制台</span></summary>
+<div class="body">
+<p>在控制台鼠标操作时，操作的方块，即数字/符号本身，加上右侧的空格。</p>
+<p>故点击空格时，操作的便是空格左侧代表的方块。当玩家不熟练时，此规则可能带来令人遗憾的爆炸。</p>
+<p>如果启用了“鼠标点击屏蔽空格”，则点击空格将不被识别。</p>
+</div>
+</details>
+
+<details>
+<summary>鼠标操作切换左右键<span class="tag">仅控制台</span></summary>
+<div class="body">
+<p>当玩家使用触屏/触摸板执行鼠标操作时，右键操作可能极为不便。</p>
+<p>在控制台鼠标操作时，点击 <code>[鼠标左键:翻开/右键:标记]</code> 可切换左右键功能，使翻开键、标记键互换。</p>
+<p>图形界面的鼠标因暂无按键，可参考“点击空地切换左右键”功能。</p>
+</div>
+</details>
+
+<details>
+<summary>点击空地切换左右键</summary>
+<div class="body">
+<p>当操作空地（数字 0），且操作为控制台或图形界面的鼠标，而不是键盘、指令时，如果启用了“鼠标点击空地切换左右键”，则鼠标的翻开键、标记键互换。</p>
+</div>
+</details>
+
+<details>
+<summary>触动翻开</summary>
+<div class="body">
+<p>如果启用了“触动翻开”，当执行标记操作，且操作为控制台或图形界面的鼠标，而不是键盘、指令时，如果该操作更换为翻开操作，可触发快速翻开，则该操作更换为翻开操作。</p>
+</div>
+</details>
+
+</div>
+</details>
+
+<details>
+<summary>控制台的操作模式和混动切换</summary>
+<div class="body">
+<p>控制台存在 3 种操作模式：(0) <code>@#rc</code> <strong>C</strong>ommand　(1) <code>wasd23</code> <code>wasdhu</code> <strong>K</strong>eyboard　(2) 鼠标 <strong>M</strong>ouse</p>
+<p>另外，(3) Window 为独立图形界面窗口操作模式，不参与控制台操作混动。</p>
+
+<h3>C</h3>
+<p><code>@#rc</code> 是一种类指令操作模式，需输入 <code>@:翻开</code> / <code>#:标记</code>、<code>r:行坐标</code>、<code>c:列坐标</code> 3 个元素，并按回车后执行。</p>
+<p>中途可以通过退格键撤销输入，其特性与纯文本略有不同，数字整体会被一键删除。</p>
+<p>非法的字符、越界的坐标都不能被成功输入，执行的回车也可以是任意非数字键。</p>
+
+<h3>K</h3>
+<p><code>wasd23</code> 是一种键盘非阻塞型操作模式，通过 <code>wasd</code> 移动光标，按 <code>2</code> 翻开，按 <code>3</code> 标记，主键盘/小键盘均可，可用 <code>hu</code> 代替 <code>23</code>。</p>
+
+<h3>操作混动和模式切换</h3>
+<p>快捷键切换：一般按 <code>C</code> / <code>K</code> / <code>M</code> 都可切换模式，除 <code>C</code> 不能切换到 <code>K</code>。</p>
+<p>在 C，无输入时，<code>wasd</code> 可切换到 K；仅输入操作字符（<code>@</code> / <code>#</code>）时不可切换；输入到行坐标时，<code>ws</code> 可上下调整，输入到列坐标时，<code>wasd</code> 均可调整。</p>
+<p>在 K，<code>@</code> / <code>#</code> / <code>C</code> 可切换到 C。</p>
+<p>在 M，仅能通过 <code>K</code> / <code>C</code> 切换，<code>wasd</code> 可调整当前位置，<code>23hu</code> 可操作，但不会离开 M。</p>
+</div>
+</details>
+
+<details>
+<summary>其他</summary>
+<div class="body">
+<p>根据上文介绍的特性，你或许可以尝试一些奇异的操作。</p>
+
+<h3>移动、触发分离式操作</h3>
+<p>如使用一只手用触摸板/鼠标移动，另一只手按 <code>23</code> 或 <code>hu</code> 触发。</p>
+
+<h3>傻瓜扫雷</h3>
+<p>当同时启用“快速标记”和“触动翻开”时，你或许可以按着键不放沿着数字移动，直接完成某些简单的局面。</p>
+
+<h3>对于坚持传统扫雷手法者</h3>
+<p>你被禁锢得太久了。你害怕，你怕突破，你怕一旦改变，就会丢掉现有的成果。事实上，扫雷应该是自由的，我们也是自由的。</p>
+</div>
+</details>
+</section>
+
+<!-- ============ 声明 ============ -->
+<section id="statement">
+<h2>声明</h2>
+<div class="note">
+  <p>MineSweeper Run 的所有概念、规则均独立，不受任何其他扫雷游戏程序的约束。</p>
+  <p>其产生的游戏纪录仅用作自我提升，不可与其他扫雷游戏程序的纪录横比。</p>
+  <p>MineSweeper Run 过去、现在、未来不会统计胜率、连胜、连败信息，可放心使用。</p>
+</div>
+</section>
+
+<!-- ============ 链接 ============ -->
+<section id="links">
+<h2>链接</h2>
+<div class="link-box">
+  <a href="https://github.com/Ltabsyy/MineSweeper" target="_blank" rel="noopener">
+    <b>GitHub 仓库（持续维护更新）</b>
+    <small>https://github.com/Ltabsyy/MineSweeper</small>
+  </a>
+  <a href="https://pan.baidu.com/s/1q1OGgY_HpIPAkGEX6LPvxg?pwd=avjy" target="_blank" rel="noopener">
+    <b>百度网盘（此程序大小不超过 1MB，可放心下载）</b>
+    <small>https://pan.baidu.com/s/1q1OGgY_HpIPAkGEX6LPvxg?pwd=avjy</small>
+  </a>
+</div>
+</section>
+
+<footer>
+  MineSweeper Run · 详细介绍
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var themeBtn = document.getElementById('themeBtn');
+
+  // 跟随系统初始主题
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    root.setAttribute('data-theme','dark');
+  }
+  function syncBtn(){
+    themeBtn.textContent = root.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+  }
+  syncBtn();
+
+  themeBtn.addEventListener('click', function(){
+    root.setAttribute('data-theme', root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    syncBtn();
+  });
+
+  // 展开 / 折叠全部
+  document.getElementById('expandAll').addEventListener('click', function(){
+    document.querySelectorAll('details').forEach(function(d){ d.open = true; });
+  });
+  document.getElementById('collapseAll').addEventListener('click', function(){
+    document.querySelectorAll('details').forEach(function(d){ d.open = false; });
+  });
+
+  // 点击目录时，自动展开目标所在的折叠块
+  document.querySelectorAll('.nav-links a').forEach(function(a){
+    a.addEventListener('click', function(){
+      var id = a.getAttribute('href');
+      var target = id ? document.querySelector(id) : null;
+      if(!target) return;
+      var el = target;
+      while(el && el !== document.body){
+        if(el.tagName === 'DETAILS') el.open = true;
+        el = el.parentElement;
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
