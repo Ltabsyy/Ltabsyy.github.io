@@ -20,9 +20,9 @@
 
   /* ---- 背景装饰（浅色） ---- */
   --grid-line:rgba(24,38,64,.045);
-  --glow-1:rgba(47,111,235,.13);
-  --glow-2:rgba(138,92,246,.11);
-  --glow-3:rgba(47,111,235,.05);
+  --glow-1:rgba(232,68,58,.20);    /* 左上 红 */
+  --glow-2:rgba(74,158,255,.18);   /* 右上 蓝 */
+  --glow-3:rgba(47,111,235,.07);   /* 底部 淡蓝 */
   --shadow:0 1px 2px rgba(24,38,64,.04), 0 14px 30px -20px rgba(24,38,64,.35);
 }
 [data-theme="dark"]{
@@ -39,10 +39,10 @@
   --code-bg:#232a33;
 
   /* ---- 背景装饰（深色） ---- */
-  --grid-line:rgba(255,255,255,.026);
-  --glow-1:rgba(110,168,254,.12);
-  --glow-2:rgba(138,92,246,.11);
-  --glow-3:rgba(110,168,254,.045);
+  --grid-line:rgba(255,255,255,.018);
+  --glow-1:rgba(232,68,58,.14);    /* 左上 红 */
+  --glow-2:rgba(74,158,255,.13);   /* 右上 蓝 */
+  --glow-3:rgba(74,158,255,.05);   /* 底部 淡蓝 */
   --shadow:0 1px 2px rgba(0,0,0,.45), 0 16px 34px -20px rgba(0,0,0,.9);
 }
 *{box-sizing:border-box}
@@ -309,6 +309,38 @@ details,
     repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 34px),
     repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 34px);}
 }
+/* 顶栏nav在横向空间不够时至多两行，工具tools独立一行，各节标题nav-links可以收缩并横向滚动 */
+@media (max-width: 900px){
+  .nav-inner{
+    gap:8px 10px;
+    padding:8px 14px;
+  }
+  .brand{
+    flex:0 0 auto;
+    font-size:14px;
+  }
+  .nav-links{
+    flex:1 1 0;
+    min-width:0;
+    margin-left:0;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .nav-links::-webkit-scrollbar{
+    display:none;
+  }
+  .nav-links a{
+    flex:none;
+  }
+  .tools{
+    flex:1 1 100%;
+    margin-left:0;
+    justify-content:flex-end;
+  }
+}
 </style>
 </head>
 <body>
@@ -321,7 +353,6 @@ details,
       <a href="#features">特色</a>
       <a href="#tutorial">教程</a>
       <a href="#solvable">可解地图</a>
-      <a href="#pairs">数对实质</a>
       <a href="#score">标准分数</a>
       <a href="#controls">操作方式</a>
       <a href="#statement">声明</a>
@@ -372,7 +403,7 @@ details,
   <li>在控制台的基于鼠标和键盘混动的操作界面，以及指令、WASD、鼠标三种操作混动的游戏界面</li>
   <li>完整的扫雷难度支持，地图从 1×1 到 256×384，雷数从 0 到满（大地图建议使用 Window 版本）</li>
   <li>生成缓存文件，自动保存用户设置、上一次地图和历史记录，胜利时显示打破纪录</li>
-  <li>可对外部输入的地图进行求解、游戏时按 <code>!</code> / <code>Tab</code> 对实时求解、连续生成地图并不断求解（压榨 CPU）</li>
+  <li>可对外部输入的地图进行求解、游戏时按 <code>!</code> / <code>Tab</code> 实时求解、连续生成地图并不断求解（压榨 CPU）</li>
   <li>控制台可切换深浅模式、设置自选光标、设置是否实时显示用时和 3BV，界面个性化</li>
   <li>隐藏功能：历史记录查看、统计和编辑，自制地图的编辑和游戏，操作记录（录像）的保存和播放等</li>
   <li>将上述所有的一切，编译进不到 250K 的程序文件中</li>
@@ -444,7 +475,7 @@ details,
 <ol>
   <li><code>minesweeper-settings.txt</code><br>存储着用户设置，例如游戏难度，删除后程序启动后会使用默认设置。</li>
   <li><code>minesweeper-lastmap.txt</code><br>存储着未结束的上一次游戏，程序启动后会优先进入上一次游戏。</li>
-  <li><code>minesweeper-records.csv</code>（旧版后缀为 <code>.txt</code>）<br>存储着扫雷历史记录，用于打破纪录显示，删除后记录会丢失，第一局有效胜利即可打破纪录。<br>从旧版本游戏（Run 3.4–5.14）更新为新版本（Run 5.15 起）时，需运行 <code>MSR Records Updater</code>。</li>
+  <li><code>minesweeper-records.csv</code>（旧版后缀为 <code>.txt</code>）<br>存储着扫雷历史记录，用于打破纪录显示，删除后记录会丢失，第一局有效胜利即可打破纪录。<br>从旧版本游戏（Run 3.4-5.14）更新为新版本（Run 5.15 起）时，需运行 <code>MSR Records Updater</code>。</li>
   <li><code>minesweeper-maps.txt</code><br>存储着用户自制的扫雷地图，删除后自制的扫雷地图均会丢失。</li>
   <li><code>minesweeper-operations</code> 文件夹<br>存储着扫雷操作记录（录像）。（Run 5.19 起）</li>
 </ol>
@@ -537,6 +568,10 @@ details,
 <section id="solvable">
 <h2>可解地图说明</h2>
 <p>可解地图，指起始点必为空，并可通过不断计算当前局面解并执行，直至取得胜利的随机扫雷地图。</p>
+
+<details>
+<summary>局面解：简单、逻辑、枚举、雷率</summary>
+<div class="body">
 <p>其局面解包含 4 种情况：</p>
 
 <details>
@@ -574,7 +609,7 @@ details,
 <summary>4. 雷率解</summary>
 <div class="body">
 <p>对地图所有未知方块枚举当前所有符合数字和剩余雷数的可能性，并对所有可能性综合分析得到剩余雷数范围，从而得到全部未知方块的雷率，如果雷率最低的一个或多个方块，在实际地图中都非雷，则翻开这些未知方块。</p>
-<p>雷率解是不确定解，但结合实际地图又是确定解；Run 1.4–4.10 版本可解地图均不排除雷率解，Run 4.11 开始排除雷率解。</p>
+<p>雷率解是不确定解，但结合实际地图又是确定解；Run 1.4-4.10 版本可解地图均不排除雷率解，Run 4.11 开始排除雷率解。</p>
 </div>
 </details>
 
@@ -598,22 +633,23 @@ details,
 </ul>
 </div>
 </details>
+</div>
+</details>
 
 <details>
-<summary>筛选式和调整式</summary>
+<summary>生成方式：筛选式和调整式</summary>
 <div class="body">
 <p>可解地图按生成方式分为筛选式和调整式，筛选式适用于低密度、小地图难度，调整式适用于高密度、大地图难度。</p>
-<p>Run 1.4–5.22 版本仅存在筛选式可解地图生成算法，Run 5.23 开始试行引入调整式。</p>
+<p>Run 1.4-5.22 版本仅存在筛选式可解地图生成算法，Run 5.23 开始试行引入调整式。</p>
 <p>筛选式算法性能高效，从 Run 5.22 开始，在默认地图求解器设置下，所有预设难度（包括顶级）都可在 0.1 秒以内生成。</p>
 <p>调整式算法当前仅供体验，不支持操作记录（录像）、中断（暂停或重启程序）的情况，且仅供自定义难度使用。</p>
 <p>在设置页面进入调试选项，输入 <code>2</code> 回车，再输入 <code>6</code> 回车，点击返回并保存，即可体验调整式可解地图。</p>
 </div>
 </details>
-</section>
 
-<!-- ============ 数对实质 ============ -->
-<section id="pairs">
-<h2>逻辑推理的数对实质</h2>
+<details>
+<summary>逻辑推理的数对实质</summary>
+<div class="body">
 
 <details>
 <summary>（1）概念</summary>
@@ -655,12 +691,12 @@ details,
 <summary>（5）分类数对的特征</summary>
 <div class="body">
 <p>78 类数对，实际是所有数对的通式，然而实战中一般不现场演算，熟练玩家可瞬间对数对定义的逻辑推理进行判断并操作。</p>
-<p>大多数逻辑推理为 1–5 类数对，1、3 类尤为常见。</p>
+<p>大多数逻辑推理为 1-5 类数对，1、3 类尤为常见。</p>
 <p>对于 1234 类数对，可通过数对之二确定共享区雷数，从而确定数对之一独占区雷数，确定操作。也被称为“有且仅有”论。</p>
 <p>对于 5678 类数对，则不存在直观的判断思路过程，常引用枚举判断进行证明，而此类解释在实战中可用性极低，必须采用“数对”论或类似的“减法公式”、“双集合模型”。</p>
 <p>对于 1234 类数对，由于数对之二独占区全已知，只需对数对之一独占区进行操作。</p>
 <p>对于 5678 类数对，由于数对之二独占区不全已知，在对数对之一独占区进行操作后，必然对数对之二独占区可进行反向操作。</p>
-<p>对于 5678 类数对，若数对之一和数对之二互换，将产生 5↔6，7↔8 的转化，若已对数对之一独占区进行操作，则会在转化后数对类型 −4，即 5→2，6→1，7→4，8→3。</p>
+<p>对于 5678 类数对，若数对之一和数对之二互换，将产生 5↔6，7↔8 的转化，若已对数对之一独占区进行操作，则会在转化后数对类型 -4，即 5→2，6→1，7→4，8→3。</p>
 </div>
 </details>
 
@@ -677,6 +713,9 @@ details,
   <li><strong>7 类数对</strong>：数对之二独占区不全已知的不相等数对，如果数对之二与数对之一之差等于已知雷数差加数对之二独占区未知量，则翻开数对之一独占区未知方块；</li>
   <li><strong>8 类数对</strong>：数对之二独占区不全已知的不相等数对，如果数对之一与数对之二之差等于已知雷数差加数对之一独占区未知量，则标记数对之一独占区未知方块。</li>
 </ol>
+</div>
+</details>
+
 </div>
 </details>
 </section>
@@ -700,11 +739,11 @@ details,
 <div class="body">
 <dl class="kv">
   <dt>RQP</dt>
-  <dd>Rapport Qualité Prix：认为 3BV/s 需要除以时间来修正，计算公式：<code>(time+1)*time/solved3BV</code>，值越小越好，但并非如 QG 一样基于拟合，是没有道理的。</dd>
+  <dd>Rapport Qualité Prix，认为 3BV/s 需要除以时间来修正，计算公式：<code>(time+1)*time/solved3BV</code>，值越小越好，但并非如 QG 一样基于拟合，是没有道理的。</dd>
   <dt>QG</dt>
-  <dd>Quality Grade：由郭锦洋提出，计算公式：<code>(time^1.7)/solved3BV</code>，值越小越好，通过拟合修正。</dd>
+  <dd>Quality Grade，由郭锦洋提出，计算公式：<code>(time^1.7)/solved3BV</code>，值越小越好，通过拟合修正。</dd>
   <dt>STNB</dt>
-  <dd>尸体牛逼：由郭锦洋提出，计算公式：<code>sqrt(completion)*stnbc/QG</code>，值越大越好，其中 <code>completion=solved3BV/total3BV</code>，<code>stnbc</code> 为常数，旧版的 8×8-10 难度、中级、高级分别为 47.299、153.73、435.001，新版分别为 36、162、435。</dd>
+  <dd>尸体牛逼，由郭锦洋提出，计算公式：<code>sqrt(completion)*stnbc/QG</code>，值越大越好，其中 <code>completion=solved3BV/total3BV</code>，<code>stnbc</code> 为常数，旧版的 8×8-10 难度、中级、高级分别为 47.299、153.73、435.001，新版分别为 36、162、435。</dd>
 </dl>
 <p>旧版的 STNB 是其中最为好用、较受认可的存在，然而其仅限于 3 个难度，并非任意难度，且在 <code>completion&lt;1</code> 时值偏高，另外受作者影响，其定义可能被随意更改而劣化。</p>
 <p>故从 MineSweeper Run 5.16 开始，独立提出 RDV 和 SS 的概念，SS 可横跨难度、地图、完成度评估该局玩家发挥水平，且无视上游概念更新。</p>
