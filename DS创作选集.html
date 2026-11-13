@@ -62,7 +62,7 @@
   .list::-webkit-scrollbar-thumb:hover{background:var(--muted);}
 
   .item{
-    display:flex;align-items:center;gap:8px;
+    display:flex;align-items:flex-start;gap:8px;
     width:100%;text-align:left;border:0;background:transparent;
     padding:7px 10px;border-radius:8px;cursor:pointer;color:var(--text);
     font-size:14px;line-height:1.5;margin-bottom:2px;
@@ -75,12 +75,20 @@
     flex:0 0 auto;min-width:20px;height:20px;padding:0 5px;border-radius:6px;
     background:var(--hover);color:var(--muted);font-size:11px;
     display:inline-flex;align-items:center;justify-content:center;
+    margin-top:1px;
   }
   .item.active .idx{background:var(--accent);color:#fff;}
   .item .label{
-    flex:1;min-width:0;
+    display:block;min-width:0;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
+  .item .body{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .item .snippet{
+    display:block;margin-top:2px;font-size:12px;line-height:1.5;
+    color:var(--muted);font-weight:400;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .item mark{background:transparent;color:var(--accent);font-weight:700;}
 
   .list-empty{padding:16px;font-size:13px;color:var(--muted);}
 
@@ -197,7 +205,7 @@
     </div>
 
     <div class="search-wrap">
-      <input id="search" type="search" placeholder="搜索标题…" autocomplete="off" />
+      <input id="search" type="search" placeholder="搜索标题或正文…" autocomplete="off" />
     </div>
 
     <nav class="list" id="list"></nav>
@@ -236,21 +244,94 @@
     query: ''
   };
 
+  // 同时请求的最大文章数
+  const CONCURRENCY = 8;
+
   /* ---------------- 工具 ---------------- */
   const esc = (s) =>
     String(s).replace(/[&<>"']/g, (c) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
 
+  // 把 text 中所有匹配 q（已小写）的位置用 <mark> 包起来
+  function highlight(text, q) {
+    if (!q) return esc(text);
+    const lower = text.toLowerCase();
+    let out = '';
+    let pos = 0;
+    let i;
+    while ((i = lower.indexOf(q, pos)) !== -1) {
+      out += esc(text.slice(pos, i));
+      out += '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>';
+      pos = i + q.length;
+    }
+    out += esc(text.slice(pos));
+    return out;
+  }
+
+  // 命中位置前后各取一点，做成一行摘要
+  function makeSnippet(a, q) {
+    if (!q) return '';
+    // 标题里已经有，就别重复显示了
+    if (a.title.toLowerCase().includes(q)) return '';
+
+    const i = a.lower.indexOf(q);
+    if (i < 0) return '';
+
+    const before = 12;
+    const after = 34;
+    const start = Math.max(0, i - before);
+    const end = Math.min(a.text.length, i + q.length + after);
+
+    let s = a.text.slice(start, end).replace(/\s+/g, ' ').trim();
+    if (start > 0) s = '…' + s;
+    if (end < a.text.length) s = s + '…';
+    return s;
+  }
+
+  // 并发上限执行，保持结果顺序；用于并行拉取文章
+  async function mapLimit(items, limit, fn) {
+    const out = new Array(items.length);
+    let cursor = 0;
+    const workers = Array.from(
+      { length: Math.min(limit, items.length) },
+      async () => {
+        for (;;) {
+          const i = cursor++;
+          if (i >= items.length) return;
+          out[i] = await fn(items[i], i);
+        }
+      }
+    );
+    await Promise.all(workers);
+    return out;
+  }
+
+  // 与最终排序一致的“序号”规则：文件名开头数字，无则视为最小
+  function orderOf(name) {
+    const m = name.replace(/\.txt$/i, '').match(/^(\d+)/);
+    return m ? parseInt(m[1], 10) : -Infinity;
+  }
+
+  // 估算最终排在第一位的文件名（降序，序号最大者）
+  function pickFirst(names) {
+    if (!names.length) return null;
+    let best = names[0];
+    let bestOrder = orderOf(best);
+    for (let i = 1; i < names.length; i++) {
+      const o = orderOf(names[i]);
+      if (o > bestOrder) { best = names[i]; bestOrder = o; }
+    }
+    return best;
+  }
+
   /* ---------------- 文章解析 ----------------
      结构：标题 / 空行 / 引言(可多行，可无) / 空行 / 正文
   ---------------------------------------------- */
   function parseArticle(filename, raw) {
     const base = filename.replace(/\.txt$/i, '').trim() || filename;
-    const lines = raw
-      .replace(/^\uFEFF/, '')
-      .replace(/\r\n?/g, '\n')
-      .split('\n');
+    const src = raw.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+    const lines = src.split('\n');
 
     // 跳过开头的空行，取第一行非空行作为标题
     let i = 0;
@@ -290,13 +371,18 @@
     const m = base.match(/^(\d+)/);
     const order = m ? parseInt(m[1], 10) : null;
 
+    // ★ 用于全文搜索的纯文本（标题 + 引言 + 正文），以及小写副本
+    const plain = title + '\n' + intro.join('\n') + '\n' + body.join('\n');
+
     return {
       id: filename,
       name: base,
       title: title,
       intro: intro,
       body: body,
-      chars: raw.replace(/\s/g, '').length,
+      text: plain,
+      lower: plain.toLowerCase(),
+      chars: src.replace(/\s/g, '').length,
       order: order,
       importIndex: 0
     };
@@ -306,7 +392,7 @@
   function renderList() {
     const q = state.query.trim().toLowerCase();
     const items = state.articles.filter((a) =>
-      !q || a.title.toLowerCase().includes(q) || a.name.toLowerCase().includes(q)
+      !q || a.lower.includes(q) || a.name.toLowerCase().includes(q)
     );
 
     els.count.textContent = state.articles.length
@@ -323,9 +409,20 @@
       const badge = a.order !== null
         ? '<span class="idx">' + a.order + '</span>'
         : '<span class="idx">·</span>';
+
+      const snippet = makeSnippet(a, q);
+      const snippetHtml = snippet
+        ? '<span class="snippet">' + highlight(snippet, q) + '</span>'
+        : '';
+
       return '<button class="item' + (a.id === state.currentId ? ' active' : '') +
         '" data-id="' + esc(a.id) + '" title="' + esc(a.title) + '">' +
-        badge + '<span class="label">' + esc(a.title) + '</span></button>';
+        badge +
+        '<span class="body">' +
+          '<span class="label">' + esc(a.title) + '</span>' +
+          snippetHtml +
+        '</span>' +
+        '</button>';
     }).join('');
   }
 
@@ -397,7 +494,8 @@
   /* ---------------- 加载流程 ---------------- */
   async function fetchText(url) {
     try {
-      const res = await fetch(url, { cache: 'no-store' });
+      // 不再强制 no-store，让浏览器复用 HTTP 缓存
+      const res = await fetch(url);
       if (!res.ok) return null;
       return await res.text();
     } catch (e) {
@@ -449,23 +547,55 @@
       return;
     }
 
-    // 3. 逐个拉取并解析
-    showState('载入中', '<p>共 ' + names.length + ' 篇，正在读取…</p>');
+    // 过滤掉不安全的路径
+    const safeNames = names.filter(
+      (n) => !n.includes('/') && !n.includes('\\') && !n.includes('..')
+    );
 
-    const articles = [];
-    for (let i = 0; i < names.length; i++) {
-      const name = names[i];
-      if (name.includes('/') || name.includes('\\') || name.includes('..')) continue;
+    if (!safeNames.length) {
+      showState('没有加载到文章',
+        '<p>清单中的文件名全部不合法。</p>');
+      return;
+    }
 
+    showState('载入中', '<p>共 ' + safeNames.length + ' 篇，正在读取…</p>');
+
+    // 3. 首屏优先：先单独拉取排序后会排第一的那篇，立刻渲染
+    const firstName = pickFirst(safeNames);
+    let firstArticle = null;
+
+    if (firstName) {
+      const text = await fetchText(baseDir + encodeURIComponent(firstName));
+      if (text !== null) {
+        firstArticle = parseArticle(firstName, text);
+        firstArticle.importIndex = safeNames.indexOf(firstName);
+        state.articles = [firstArticle];
+        state.currentId = firstArticle.id;
+        renderList();
+        renderArticle();
+        els.main.scrollTop = 0;
+      }
+    }
+
+    // 4. 其余文章并行加载（并发上限 CONCURRENCY）
+    const rest = firstName
+      ? safeNames.filter((n) => n !== firstName)
+      : safeNames;
+
+    const results = await mapLimit(rest, CONCURRENCY, async (name) => {
       const text = await fetchText(baseDir + encodeURIComponent(name));
       if (text === null) {
         console.warn('加载失败：' + name);
-        continue;
+        return null;
       }
       const a = parseArticle(name, text);
-      a.importIndex = i;
-      articles.push(a);
-    }
+      a.importIndex = safeNames.indexOf(name);
+      return a;
+    });
+
+    const articles = [];
+    if (firstArticle) articles.push(firstArticle);
+    results.forEach((a) => { if (a) articles.push(a); });
 
     if (!articles.length) {
       showState('没有加载到文章',
@@ -473,7 +603,7 @@
       return;
     }
 
-    // 4. 按文件名序号排序
+    // 5. 按文件名序号排序
     articles.sort((a, b) => {
       if (a.order !== null && b.order !== null) {
         if (a.order !== b.order) return a.order - b.order;
@@ -483,14 +613,20 @@
         return 1;
       }
       return a.title.localeCompare(b.title, 'zh-Hans-CN', { numeric: true });
-    });
+    }).reverse(); // 降序，先显示最新文章
 
     state.articles = articles;
-    state.currentId = articles[0].id;
+
+    // 保持用户正在读的那篇；若已不存在则回退到第一篇
+    const prevId = state.currentId;
+    if (!articles.some((a) => a.id === state.currentId)) {
+      state.currentId = articles[0].id;
+    }
 
     renderList();
     renderArticle();
-    els.main.scrollTop = 0;
+    // 只有切换到别的文章时才回到顶部，避免打断正在阅读的首篇
+    if (state.currentId !== prevId) els.main.scrollTop = 0;
   }
 
   /* ---------------- 抽屉 ---------------- */
