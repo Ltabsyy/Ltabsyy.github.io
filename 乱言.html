@@ -49,6 +49,14 @@
     margin:0 auto;
     padding:5.5rem 1.5rem 9rem;
     animation:fade .9s ease both;
+    transition:opacity .45s ease;
+  }
+
+  /* 弹幕开启时：正文淡出（保留布局，不产生跳动） */
+  body.danmaku-on #content{
+    animation:none;
+    opacity:0;
+    pointer-events:none;
   }
 
   @keyframes fade{
@@ -135,11 +143,85 @@
     border-radius:10px;
   }
   ::-webkit-scrollbar-track{ background:transparent; }
+
+  /* ── 弹幕开关按钮 ── */
+  #danmaku-toggle{
+    position:fixed;
+    right:1.25rem;
+    bottom:1.25rem;
+    z-index:80;
+    padding:.55rem 1.15rem;
+    font-family:inherit;
+    font-size:.82rem;
+    letter-spacing:.2em;
+    text-indent:.2em;
+    line-height:1.4;
+    color:var(--accent);
+    background:rgba(18,20,25,.78);
+    border:1px solid rgba(200,168,107,.35);
+    border-radius:999px;
+    cursor:pointer;
+    -webkit-backdrop-filter:blur(6px);
+    backdrop-filter:blur(6px);
+    transition:background .25s ease, border-color .25s ease, color .25s ease, transform .2s ease;
+  }
+  #danmaku-toggle:hover{
+    background:rgba(200,168,107,.14);
+    border-color:rgba(200,168,107,.62);
+  }
+  #danmaku-toggle:active{ transform:scale(.96); }
+  #danmaku-toggle:focus-visible{
+    outline:2px solid rgba(200,168,107,.6);
+    outline-offset:3px;
+  }
+  #danmaku-toggle[aria-pressed="true"]{
+    background:rgba(200,168,107,.9);
+    border-color:transparent;
+    color:#14161b;
+  }
+
+  /* ── 弹幕层 ── */
+  #danmaku-layer{
+    position:fixed;
+    inset:0;
+    z-index:60;
+    overflow:hidden;
+    pointer-events:none;
+    display:none;
+    contain:strict;
+  }
+  body.danmaku-on #danmaku-layer{ display:block; }
+
+  .danmaku-item{
+    position:absolute;
+    left:100%;
+    top:0;
+    white-space:nowrap;
+    font-size:.95rem;
+    line-height:1.6;
+    letter-spacing:.02em;
+    color:var(--fg);
+    text-shadow:
+      0 1px 3px rgba(0,0,0,.85),
+      0 0 10px rgba(0,0,0,.55);
+    will-change:transform;
+    backface-visibility:hidden;
+  }
+  .danmaku-item i{
+    font-style:italic;
+    color:var(--quote);
+  }
 </style>
 </head>
 <body>
 
 <main id="content"></main>
+
+<!-- 弹幕层（默认隐藏，JS 中填充） -->
+<div id="danmaku-layer" aria-hidden="true"></div>
+
+<!-- 弹幕开关 -->
+<button id="danmaku-toggle" type="button" aria-pressed="false">弹幕</button>
 
 <noscript>
   <div class="notice">本页面需要 JavaScript 才能读取并显示 chaos-word.md。</div>
@@ -151,6 +233,8 @@
 
   var SOURCE = 'chaos-word.md';
   var root = document.getElementById('content');
+  var toggleBtn = document.getElementById('danmaku-toggle');
+  var layerEl = document.getElementById('danmaku-layer');
 
   /* ------------------------------------------------------------------
    * 1. 切块
@@ -209,9 +293,11 @@
   }
 
   /* ------------------------------------------------------------------
-   * 3. 渲染
+   * 3. 渲染正文
    * ------------------------------------------------------------------ */
   function render(text) {
+    dmStop();                       // 重新渲染时先收掉弹幕
+
     var blocks = splitBlocks(text);
     var frag = document.createDocumentFragment();
 
@@ -241,12 +327,248 @@
 
     root.innerHTML = '';
     root.appendChild(frag);
+
+    buildDanmakuItems(blocks);      // 同步准备弹幕素材
+    if (DM.items.length) dmStart(); // ← 默认开启弹幕(doge)
     window.scrollTo(0, 0);
   }
 
-  /* ------------------------------------------------------------------
-   * 4. 读取文件
-   * ------------------------------------------------------------------ */
+  /* ==================================================================
+   *  弹幕模块
+   * ================================================================== */
+
+  var DM = {
+    active: false,
+    items: [],        // 每条弹幕 = 一组 {text, quote}
+    queue: [],        // 打乱后的待播队列
+    nodes: [],        // 当前屏幕上的 DOM 节点
+    timer: null,      // 调度定时器
+    lanes: [],        // 每条轨道：{ freeAt, speed }；freeAt 之前该轨道不可再用
+    laneHeight: 46,
+    maxNodes: 45
+  };
+
+  /* 单调时钟（performance.now 与 Date.now 基准不同，比较时必须统一） */
+  function nowMs() {
+    return (window.performance && typeof performance.now === 'function')
+      ? performance.now()
+      : Date.now();
+  }
+
+  /* ---- 把正文块整理成「弹幕条目」：跳过 ## 标题，块内多行合并 ---- */
+  function buildDanmakuItems(blocks) {
+    var out = [];
+
+    for (var i = 0; i < blocks.length; i++) {
+      var b = blocks[i];
+      if (b.type !== 'text') continue;      // 不含二级标题
+
+      var parts = [];
+      for (var j = 0; j < b.lines.length; j++) {
+        var q = stripQuote(b.lines[j]);
+        if (q.text === '') continue;
+        parts.push({ text: q.text, quote: q.quote });
+      }
+      if (parts.length) out.push(parts);
+    }
+
+    DM.items = out;
+    DM.queue = [];
+  }
+
+  /* ---- Fisher–Yates 洗牌 ---- */
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
+  /* ---- 取下一条（队列空了就重新洗牌，保证次序随机且不停播） ---- */
+  function nextItem() {
+    if (!DM.items.length) return null;
+    if (!DM.queue.length) DM.queue = shuffle(DM.items.slice());
+    return DM.queue.shift();
+  }
+
+  /* ---- 生成一个弹幕 DOM ---- */
+  function makeNode(parts) {
+    var el = document.createElement('div');
+    el.className = 'danmaku-item';
+
+    for (var i = 0; i < parts.length; i++) {
+      if (i) el.appendChild(document.createTextNode(' '));   // 多段合并为一行
+      if (parts[i].quote) {
+        var it = document.createElement('i');                // 引用 => 斜体
+        it.textContent = parts[i].text;
+        el.appendChild(it);
+      } else {
+        el.appendChild(document.createTextNode(parts[i].text));
+      }
+    }
+    return el;
+  }
+
+  function removeNode(el) {
+    var idx = DM.nodes.indexOf(el);
+    if (idx > -1) DM.nodes.splice(idx, 1);
+    if (el.parentNode) el.parentNode.removeChild(el);
+  }
+
+  /* ---- 发射一条弹幕 ---- */
+  function spawn() {
+    if (!DM.active || !DM.layerEl) return;
+    if (DM.nodes.length >= DM.maxNodes) return;
+    if (!DM.lanes.length) return;
+
+    var now = nowMs();
+
+    /* 1. 只在「空闲轨道」里随机挑一条；全忙就这轮不发，等下一次调度 */
+    var free = [];
+    for (var k = 0; k < DM.lanes.length; k++) {
+      if (DM.lanes[k].freeAt <= now) free.push(k);
+    }
+    if (!free.length) return;
+
+    var laneIdx = free[Math.floor(Math.random() * free.length)];
+    var lane = DM.lanes[laneIdx];
+
+    /* 2. 取内容（放在选完轨道之后，避免浪费队列） */
+    var parts = nextItem();
+    if (!parts) return;
+
+    /* 3. 建节点、入层 */
+    var el = makeNode(parts);
+    el.style.top = (laneIdx * DM.laneHeight + 8) + 'px';
+    DM.layerEl.appendChild(el);
+
+    var vw = window.innerWidth;
+    var w = el.getBoundingClientRect().width;
+
+    /* 同轨道速度固定：后一条不会追上前一条 */
+    var speed = lane.speed;
+    var dur = ((vw + w) / speed) * 1000;        // 毫秒
+
+    /* 4. 记下该轨道何时才能再发：
+          尾部（右边缘）完全进入屏幕后，再与下一条留出 GAP 像素的间隔 */
+    var GAP = 80;                                // 两条弹幕之间的最小水平像素间隔
+    lane.freeAt = now + ((w + GAP) / speed) * 1000;
+
+    DM.nodes.push(el);
+
+    if (typeof el.animate === 'function') {
+      var anim = el.animate(
+        [
+          { transform: 'translate3d(0,0,0)' },
+          { transform: 'translate3d(' + (-(vw + w)) + 'px,0,0)' }
+        ],
+        { duration: dur, easing: 'linear', fill: 'forwards' }
+      );
+      anim.onfinish = function () { removeNode(el); };
+    } else {
+      setTimeout(function () { removeNode(el); }, dur);
+    }
+  }
+
+  /* ---- 调度循环 ---- */
+  function schedule() {
+    if (!DM.active) return;
+    spawn();
+    DM.timer = setTimeout(schedule, 320 + Math.random() * 620);
+  }
+
+  /* ---- 开启 ---- */
+  function dmStart() {
+    if (DM.active || !DM.items.length) return;
+
+    DM.active = true;
+    DM.nodes = [];
+    DM.queue = [];
+    DM.layerEl = layerEl;
+    DM.layerEl.innerHTML = '';
+
+    /* 初始化轨道：每条轨道独立速度（同轨道固定，避免追尾），初始全部空闲 */
+    var laneCount = Math.max(
+      1,
+      Math.floor((window.innerHeight - 40) / DM.laneHeight)
+    );
+    DM.lanes = [];
+    for (var n = 0; n < laneCount; n++) {
+      DM.lanes.push({
+        freeAt: 0,
+        speed: 90 + Math.random() * 70
+      });
+    }
+
+    document.body.classList.add('danmaku-on');
+    toggleBtn.setAttribute('aria-pressed', 'true');
+    toggleBtn.textContent = '关闭弹幕';
+
+    /* 开场先来一小串，避免空屏 */
+    for (var i = 0; i < 4; i++) {
+      setTimeout(spawn, i * 160);
+    }
+    DM.timer = setTimeout(schedule, 720);
+  }
+
+  /* ---- 关闭 ---- */
+  function dmStop() {
+    if (!DM.active) {
+      /* 即使没开，也顺手清一下残留（比如重新渲染时） */
+      if (DM.layerEl) DM.layerEl.innerHTML = '';
+      DM.nodes = [];
+      DM.lanes = [];
+      DM.queue = [];
+      return;
+    }
+
+    DM.active = false;
+
+    if (DM.timer) {
+      clearTimeout(DM.timer);
+      DM.timer = null;
+    }
+
+    for (var i = 0; i < DM.nodes.length; i++) {
+      var n = DM.nodes[i];
+      if (n.parentNode) n.parentNode.removeChild(n);
+    }
+    DM.nodes = [];
+    DM.lanes = [];
+
+    if (DM.layerEl) DM.layerEl.innerHTML = '';
+
+    document.body.classList.remove('danmaku-on');
+    toggleBtn.setAttribute('aria-pressed', 'false');
+    toggleBtn.textContent = '弹幕';
+  }
+
+  function dmToggle() {
+    if (DM.active) dmStop();
+    else dmStart();
+  }
+
+  toggleBtn.addEventListener('click', dmToggle);
+
+  /* 窗口尺寸变化时重算轨道数 */
+  window.addEventListener('resize', function () {
+    if (!DM.active) return;
+    var n = Math.max(
+      1,
+      Math.floor((window.innerHeight - 40) / DM.laneHeight)
+    );
+    /* 多退少补：保留已有轨道的 freeAt / speed，被截掉的弹幕仍会飞完自然移除 */
+    while (DM.lanes.length < n) {
+      DM.lanes.push({ freeAt: 0, speed: 90 + Math.random() * 70 });
+    }
+    if (DM.lanes.length > n) DM.lanes.length = n;
+  });
+
+  /* ==================================================================
+   *  读取文件
+   * ================================================================== */
+
   function showFallback(reason) {
     root.innerHTML = '';
 
